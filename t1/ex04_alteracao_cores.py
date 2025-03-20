@@ -14,8 +14,9 @@ kernel = np.array(
 
 image = cv.imread(image_path, cv.IMREAD_COLOR)
 
-filtered_image = NotImplemented.transform(image, kernel)
-result = cv.normalize(filtered_image, -1, 0, 255, cv.NORM_MINMAX).astype(np.uint8)
+for r in range(len(image)):
+    for c in range(len(image[0])):
+        image[r][c] = np.clip(np.dot(kernel, image[r][c].T), 0, 255)
 
-cv.imshow('Result', result)
+cv.imshow('Result', image)
 cv.waitKey(0)
