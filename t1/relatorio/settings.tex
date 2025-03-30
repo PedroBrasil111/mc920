@@ -1,0 +1,15 @@
+% settings.tex
+\definecolor{LightGray}{gray}{0.9}
+
+\newcommand{\pythoncode}[1]{%
+    \begin{minted}[
+        frame=lines,
+        framesep=2mm,
+        baselinestretch=1.2,
+        bgcolor=LightGray,
+        fontsize=\footnotesize,
+        linenos
+    ]{python}
+    #1
+    \end{minted}
+}
