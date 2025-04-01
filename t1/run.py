@@ -7,9 +7,11 @@ IMAGE_FOLDER  = os.path.join(os.path.dirname(__file__), 'images')
 RESULT_FOLDER = os.path.join(os.path.dirname(__file__), 'results')
 
 def save_images(image_dict: dict[str, np.ndarray], exercise: int) -> None:
+    str_ex = str(exercise).zfill(2) # adiciona um zero a esquerda se ex < 10
+    params = [cv.IMWRITE_PNG_STRATEGY, cv.IMWRITE_PNG_STRATEGY_DEFAULT]
     for title, image in image_dict.items():
-        filename = f"ex{exercise}-{title}.png"
-        cv.imwrite(os.path.join(RESULT_FOLDER, filename), image)
+        filename = f"ex{str_ex}-{title}.png"
+        cv.imwrite(os.path.join(RESULT_FOLDER, filename), image, params)
 
 def display_images(image_dict: dict[str, np.ndarray]) -> None:
     for title, image in image_dict.items():
@@ -23,14 +25,23 @@ def get_image_path(image_name: str) -> str:
 # 01
 def esboco_lapis(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR)
+    ksize = (21, 21)
+    sigma = 3.5
     gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-    blurred_image = cv.GaussianBlur(gray_image, (21, 21), 0)
-    result = cv.divide(gray_image, blurred_image, gray_image, scale=256)
-    return {"Esboco lapis": result}
+    blurred_image = cv.GaussianBlur(gray_image, ksize, sigma)
+    result = cv.divide(gray_image, blurred_image, scale=255).astype(np.uint8)
+    return {"esboco-lapis": result}
 
 # 02
 def ajuste_brilho(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
-    return None
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
+    image = np.divide(image, 255)  # Normalizacao para [0, 1]
+    alpha_list = [1.5, 2.5, 3.5]
+    results = {}
+    for i, alpha in enumerate(alpha_list):
+        result = np.floor(np.power(image, 1/alpha) * 255).astype(np.uint8)
+        results[f"ajuste-brilho-{i+1}"] = result
+    return results
 
 # 03
 def mosaico(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
@@ -46,11 +57,29 @@ def transformacao_imagens_coloridas(image_name: str = "watch.png") -> dict[str, 
 
 # 06
 def plano_bits(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
-    return None
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
+    bit_list = [0, 4, 7]
+    results = {}
+    for i, bit in enumerate(bit_list):
+        result = (image & (0b1 << bit)).astype('uint8')
+        cv.normalize(result, result, 0, 255, cv.NORM_MINMAX)
+        results[f"plano-bit-{bit}"] = result
+    return results
 
 # 07
-def combinacao_imagens(image_name: str = "baboon_monocromatica.png", image_name_2: str = "butterfly.png") -> dict[str, np.ndarray]:
-    return None
+def combinacao_imagens(image_name_1: str = "baboon_monocromatica.png", image_name_2: str = "butterfly.png") -> dict[str, np.ndarray]:
+    image_1 = cv.imread(get_image_path(image_name_1), cv.IMREAD_GRAYSCALE)
+    image_2 = cv.imread(get_image_path(image_name_2), cv.IMREAD_GRAYSCALE)
+    weights = [
+        (0.2, 0.8),
+        (0.5, 0.5),
+        (0.8, 0.2)
+    ]
+    results = {}
+    for i, (w1, w2) in enumerate(weights):
+        result = (np.multiply(w1, image_1) + np.multiply(w2, image_2)).astype(np.uint8)
+        results[f"combinacao-{i+1}"] = result
+    return results
 
 # 08
 def transformacao_intensidade(image_name: str = "city.png") -> dict[str, np.ndarray]:
@@ -71,7 +100,7 @@ def process_and_handle_exercise(
         save: bool,
         display: bool
         ) -> None:
-    if exercise_number == 7:  # Special case for exercise 7 (requires two images)
+    if image_names and exercise_number == 7:  # Special case for exercise 7 (requires two images)
         for i in range(0, len(image_names), 2):
             image_name_1 = image_names[i]
             if i + 1 < len(image_names):
@@ -114,24 +143,33 @@ def main(args: argparse.Namespace) -> None:
         9: quantizacao_imagens,
         10: filtragem_imagens,
     }
+    if not (args.d or args.s):
+        print("\033[91mNo action specified. Use -s to save images and/or -d to display them.\033[0m")
+        return
 
     for exercise_number in args.e:
         print(f"\033[94mProcessing exercise {exercise_number}...\033[0m")
-        process_and_handle_exercise(
-            exercises[exercise_number],
-            exercise_number,
-            args.i,
-            args.s,
-            args.d
-        )
+        try:
+            process_and_handle_exercise(
+                exercises[exercise_number],
+                exercise_number,
+                args.i,
+                args.s,
+                args.d
+            )
+        except Exception as e:
+            print(f"\033[91mError processing exercise {exercise_number}: {e}\033[0m")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process images with various exercises.')
-    parser.add_argument('-i', nargs='+', type=str, help='List of image names')
+    parser.add_argument('-i', nargs='+', type=str, help='List of image names (or all)')
     parser.add_argument('-e', nargs='+', type=int, help='List of exercise numbers (1-10) - default: all')
     parser.add_argument('-s', action='store_true', help='Save processed images')
     parser.add_argument('-d', action='store_true', help='Display processed images')
     args = parser.parse_args()
+
+    if args.i and args.i[0].lower() == 'all':
+        args.i = os.listdir(IMAGE_FOLDER)
 
     # All exercises by default
     args.e = range(1, 11) if not args.e else [ex for ex in args.e if 1 <= ex <= 10]

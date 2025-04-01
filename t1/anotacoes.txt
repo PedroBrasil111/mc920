@@ -1,0 +1,40 @@
+1.1 - Esboço a lápis
+Inicialmente, foi realizado o que foi recomendado no enunciado, utilizando watch.png, com uma máscara de 21x21 pixels para o desfoque gaussiano e um sigma (desvio padrão) de 0 em ambos os eixos, uma vez que, segundo a documentação, isso faz com que o desvio padrão seja calculado automaticamente a partir das dimensões da máscara. O resultado foi o esperado, como pode ser observado na figura.
+
+<<Img watch.png vs Img processada>>
+
+Contudo, essa solução, apesar de simples, não é capaz de detectar bordas de forma eficaz onde as cores são similares, i.e., onde há baixo contraste entre os pixels que as bordas dividem.
+
+<<Img waves.png vs Img processada>>
+
+Em busca de resolver esse problema, foram testados diferentes kernels e valors de sigma para entender o comportamento desses parâmetros. Primeiro, fixou-se sigma = 0
+
+
+Em seguida: testar diferentes kernels & diferentes sigmas
+
+1.2 - Ajuste de brilho
+Testar p/ imagens bem escuras com detalhes escondidos
+
+1.3 - Mosaico
+Tentar uma forma de vetorizar
+
+1.4 - Alteração de cores
+Preciso arrumar essa merda
+
+1.5 - Transformação de imagens coloridas
+TODO
+
+1.6 - Planos de bits
+Testar imagens diferentes p/ ver efeito (p/ ex, comparar imagens claras vs escuras ou alto vs baixo contraste)
+
+1.7 - Combinação de imagens
+Fazer funcionar para imagens de tamanhos diferentes
+
+1.8 - Transformação de intensidade
+Fazer funcionar para imagens de tamanhos diferentes
+
+1.9 - Quantização de imagens
+Checar necessidade de normalizar de volta para 255
+
+1.10 - Filtragem de imagens
+TODO

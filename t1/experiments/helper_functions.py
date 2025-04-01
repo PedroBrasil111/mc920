@@ -1,6 +1,5 @@
 import numpy as np
 import cv2 as cv
-import matplotlib.pyplot as plt
 import os
 
 def get_image_path(image_name: str) -> str:
@@ -22,14 +21,14 @@ def resize_image(image, max_width, max_height):
 
 def add_title(image, title):
     font = cv.FONT_HERSHEY_TRIPLEX
-    font_scale = 0.6
+    font_scale = 1.5
     color = (0, 0, 0)  # White text
     thickness = 1
 
     # Get text size
     text_size = cv.getTextSize(title, font, font_scale, thickness)[0]
     text_x = (image.shape[1] - text_size[0]) // 2  # Center the text horizontally
-    text_y = 20  # Set vertical position of title
+    text_y = 50  # Set vertical position of title
 
     # Put the title on the image
     cv.putText(image, title, (text_x, text_y), font, font_scale, color, thickness, lineType=cv.LINE_AA)
@@ -38,7 +37,7 @@ def add_title(image, title):
 
 def display_image_grid(
         image_dict: dict[str, np.ndarray], grid_dimensions: tuple[int]
-        ) -> None:
+        ) -> np.ndarray:
     images = list(image_dict.values())
     titles = list(image_dict.keys())
     rows, cols = grid_dimensions
@@ -47,7 +46,7 @@ def display_image_grid(
         raise ValueError(f"Number of images ({len(images)}) exceeds grid dimensions ({rows*cols})")
 
     # Set max screen size (adjust as needed)
-    screen_width, screen_height = 1600, 900
+    screen_width, screen_height = 2560, 1600 # 1600, 900
 
     # Resize images
     resized_images = []
@@ -74,3 +73,5 @@ def display_image_grid(
 
     cv.imshow("Images", image_grid)
     cv.waitKey(0)
+
+    return image_grid
