@@ -35,9 +35,9 @@ def esboco_lapis(image_name: str = "watch.png") -> dict[str, np.ndarray]:
 # 02
 def ajuste_brilho(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
-    image = np.divide(image, 255)  # Normalizacao para [0, 1]
-    alpha_list = [1.5, 2.5, 3.5]
     results = {}
+    alpha_list = [0.5, 1., 1.5, 2.5, 3.5,]
+    image = np.divide(image, 255)  # Normalizacao para [0, 1]
     for i, alpha in enumerate(alpha_list):
         result = np.floor(np.power(image, 1/alpha) * 255).astype(np.uint8)
         results[f"ajuste-brilho-{i+1}"] = result
@@ -58,12 +58,12 @@ def transformacao_imagens_coloridas(image_name: str = "watch.png") -> dict[str, 
 # 06
 def plano_bits(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
-    bit_list = [0, 4, 7]
+    plain_list = [0, 4, 7]
     results = {}
-    for i, bit in enumerate(bit_list):
-        result = (image & (0b1 << bit)).astype('uint8')
-        cv.normalize(result, result, 0, 255, cv.NORM_MINMAX)
-        results[f"plano-bit-{bit}"] = result
+    for plain in plain_list:
+        result = np.bitwise_and(image, 0b1 << plain) # image & (1 << plain)
+        cv.normalize(result, result, 0, 255, cv.NORM_MINMAX) # inplace
+        results[f"plano-bit-{plain}"] = result
     return results
 
 # 07
@@ -77,7 +77,7 @@ def combinacao_imagens(image_name_1: str = "baboon_monocromatica.png", image_nam
     ]
     results = {}
     for i, (w1, w2) in enumerate(weights):
-        result = (np.multiply(w1, image_1) + np.multiply(w2, image_2)).astype(np.uint8)
+        result = (np.add(np.multiply(w1, image_1), np.multiply(w2, image_2))).astype(np.uint8)
         results[f"combinacao-{i+1}"] = result
     return results
 
