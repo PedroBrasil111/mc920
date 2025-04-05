@@ -1,10 +1,14 @@
-import cv2 as cv
-import os
 import numpy as np
-import helper_functions as F
 
-image_path = F.get_image_path("waterfall.png")
-image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
+SEPIA = [
+    [0.393, 0.769, 0.189],
+    [0.349, 0.686, 0.168],
+    [0.272, 0.534, 0.131]
+]
+
+RGBTOGRAY = [
+    [0.2989, 0.5870, 0.1140],
+]
 
 h1 = np.array(
     [[0, 0, -1, 0, 0],
@@ -74,27 +78,27 @@ h11 = np.array(
      [0, 1, 1]], dtype=np.float32
 )
 
-res = {
-    "h1": cv.filter2D(image, -1, h1),
-    "h2": cv.filter2D(image, -1, h2),
-    "h3": cv.filter2D(image, -1, h3),
-    "h4": cv.filter2D(image, -1, h4),
-    "h5": cv.filter2D(image, -1, h5),
-    "h6": cv.filter2D(image, -1, h6),
-    "h7": cv.filter2D(image, -1, h7),
-    "h8": cv.filter2D(image, -1, h8),
-    "h9": cv.filter2D(image, -1, h9),
-    "h10": cv.filter2D(image, -1, h10),
-    "h11": cv.filter2D(image, -1, h11),
+array_lookup = {
+    "sepia": SEPIA,
+    "rgbtogray": RGBTOGRAY,
+    "h1": h1,
+    "h2": h2,
+    "h3": h3,
+    "h4": h4,
+    "h5": h5,
+    "h6": h6,
+    "h7": h7,
+    "h8": h8,
+    "h9": h9,
+    "h10": h10,
+    "h11": h11,
 }
 
-res_combo = np.sqrt(np.power(res["h3"], 2, dtype=np.uint16) + np.power(res["h4"], 2, dtype=np.uint16))
-res["combo"] = res_combo.astype(np.uint8)
+def get_array(array_name: str) -> np.ndarray:
+    if array_name.lower() in array_lookup:
+        return np.array(array_lookup[array_name.lower()], dtype=np.float32)
+    else:
+        raise ValueError(f"Unknown kernel name: {array_name}")
 
-F.display_image_grid(res, (3, 4))
-
-for key in res.keys():
-    res[key] = cv.normalize(res[key], None, 0, 255, cv.NORM_MINMAX)
-    res[key] = res[key].astype(np.uint8)    
-
-F.display_image_grid(res, (3, 4))
+def get_kernels() -> dict[str, np.ndarray]:
+    return {name: get_array(name) for name in array_lookup.keys() if name[0] == "h"}

@@ -8,5 +8,4 @@ for file in os.listdir(directory):
     filename = os.fsdecode(file)
     image = cv.imread(os.path.join("t1", "images", filename), cv.IMREAD_COLOR)
     print(f"{filename} - {image.shape}")
-    print(f"Desvio padrão: {np.std(image)}")
-    print()
+    print(f"Desvio padrão: {np.std(image)}\n")

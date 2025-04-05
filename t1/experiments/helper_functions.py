@@ -22,7 +22,7 @@ def resize_image(image, max_width, max_height):
 def add_title(image, title):
     font = cv.FONT_HERSHEY_TRIPLEX
     font_scale = 1.5
-    color = (0, 0, 0)
+    color = [0, 0, 255]
     thickness = 1
 
     # Get text size

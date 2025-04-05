@@ -1,10 +1,11 @@
 import cv2 as cv
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+import helper_functions as F
 
-image_path = os.path.join(os.path.dirname(__file__), 'images', 'watch.png')
-result_filename = os.path.basename(__file__).replace(".py", ".png") 
-result_path = os.path.join(os.path.dirname(__file__), 'results', result_filename)
+image_path = F.get_image_path("watch.png")
+image = cv.imread(image_path, cv.IMREAD_COLOR)
 
 kernel = np.array(
     [[0.393, 0.769, 0.189],
@@ -12,11 +13,24 @@ kernel = np.array(
      [0.272, 0.534, 0.131]], dtype=np.float32
 )
 
-image = cv.imread(image_path, cv.IMREAD_COLOR)
+transf = np.dot(image, kernel)
 
-for r in range(len(image)):
-    for c in range(len(image[0])):
-        image[r][c] = np.clip(np.dot(kernel, image[r][c].T), 0, 255)
+#transf = np.dot(image, kernel.T)
+result = cv.normalize(transf, None, 0, 255, cv.NORM_MINMAX)
+result = result.astype(np.uint8)
+cv.cvtColor(result, cv.COLOR_RGB2BGR, dst=result)
 
-cv.imshow('Result', image)
+result2 = np.clip(transf, 0, 255)
+result2 = result2.astype(np.uint8)
+cv.cvtColor(result2, cv.COLOR_RGB2BGR, dst=result2)
+
+F.display_image_grid({
+    "Original": image,
+    "Transformed": result,
+    "Clipped": result2
+}, (1, 3))
+
+cv.imwrite(os.path.join("t1/results/transformed_image_1.png"), result)
+cv.imwrite(os.path.join("t1/results/transformed_image_2.png"), result2)
+
 cv.waitKey(0)

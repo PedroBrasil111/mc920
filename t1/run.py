@@ -1,43 +1,37 @@
-import cv2 as cv
-import os
-import numpy as np
 import argparse
+import cv2 as cv
+from arrays import get_array, get_kernels
+from helper_functions import get_image_path, save_images, display_images
+import numpy as np
+import os
 
-IMAGE_FOLDER  = os.path.join(os.path.dirname(__file__), 'images')
-RESULT_FOLDER = os.path.join(os.path.dirname(__file__), 'results')
-
-def save_images(image_dict: dict[str, np.ndarray], exercise: int) -> None:
-    str_ex = str(exercise).zfill(2) # adiciona um zero a esquerda se ex < 10
-    params = [cv.IMWRITE_PNG_STRATEGY, cv.IMWRITE_PNG_STRATEGY_DEFAULT]
-    for title, image in image_dict.items():
-        filename = f"ex{str_ex}-{title}.png"
-        cv.imwrite(os.path.join(RESULT_FOLDER, filename), image, params)
-
-def display_images(image_dict: dict[str, np.ndarray]) -> None:
-    for title, image in image_dict.items():
-        cv.imshow(title, image)
-        cv.waitKey(0)
-        cv.destroyAllWindows()
-
-def get_image_path(image_name: str) -> str:
-    return os.path.join(IMAGE_FOLDER, image_name)
+import time
 
 # 01
 def esboco_lapis(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR)
+
+    # Valores fixos para o filtro gaussiano
     ksize = (21, 21)
     sigma = 3.5
+
+    # Aplica o efeito de esboco a lapis
     gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     blurred_image = cv.GaussianBlur(gray_image, ksize, sigma)
     result = cv.divide(gray_image, blurred_image, scale=255).astype(np.uint8)
+
     return {"esboco-lapis": result}
 
 # 02
 def ajuste_brilho(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
-    results = {}
-    alpha_list = [0.5, 1., 1.5, 2.5, 3.5,]
-    image = np.divide(image, 255)  # Normalizacao para [0, 1]
+    results = {} # guarda os resultados
+
+    # Normalizacao para [0, 1]
+    image = np.divide(image, 255)
+
+    # Ajuste de brilho com diferentes valores de alpha
+    alpha_list = [0.5, 2.5, 4.5,]
     for i, alpha in enumerate(alpha_list):
         result = np.floor(np.power(image, 1/alpha) * 255).astype(np.uint8)
         results[f"ajuste-brilho-{i+1}"] = result
@@ -45,40 +39,94 @@ def ajuste_brilho(image_name: str = "baboon_monocromatica.png") -> dict[str, np.
 
 # 03
 def mosaico(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
-    return None
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
+
+    # Mapeamento dos blocos (subtraindo 1 para ficar de 0 a 15)
+    mapping = {
+        0: 5,  1: 10,  2:  12, 3:  2,
+        4: 7,  5: 15,  6:  0,  7:  8,
+        8: 11, 9: 13,  10: 1,  11: 6,
+        12: 3, 13: 14, 14: 9,  15: 4,
+    }
+
+    # Calcula o tamanho dos blocos (4x4)
+    nrows, ncols = image.shape
+    block_height = nrows // 4
+    block_width  = ncols // 4
+
+    mosaic = np.zeros((nrows, ncols), dtype=np.uint8) # mosaico inicializado com 0's
+    # Preenche o mosaico com os blocos
+    for new_block, prev_block in mapping.items():
+        # Calcula onde o bloco anterior vai ser colocado
+        prev_origin_row, prev_origin_col = (block_height * (prev_block // 4), block_width * (prev_block % 4))
+        new_origin_row, new_origin_col = (block_height * (new_block // 4), block_width * (new_block % 4))
+        # Copia o bloco da posicao anterior para a nova posicao
+        mosaic[new_origin_row:(new_origin_row+block_height), new_origin_col:(new_origin_col+block_width)] = \
+            image[prev_origin_row:(prev_origin_row+block_height), prev_origin_col:(prev_origin_col+block_width)]
+
+    return {"mosaico": mosaic}
 
 # 04
 def alteracao_cores(image_name: str = "watch.png") -> dict[str, np.ndarray]:
-    return None
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR_RGB)
+
+    # Transformacao de cores
+    transf_matrix = get_array("sepia") # matriz de transformacao
+    transf = np.dot(image, transf_matrix.T) # aplica a transformacao
+    result = cv.normalize(transf, None, 0, 255, cv.NORM_MINMAX).astype(np.uint8) # normaliza para [0, 255]
+    cv.cvtColor(result, cv.COLOR_RGB2BGR, dst=result) # cv2 usa BGR
+
+    return {"alteracao-cores": result}
 
 # 05
 def transformacao_imagens_coloridas(image_name: str = "watch.png") -> dict[str, np.ndarray]:
-    return None
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR)
+    results = {} # guarda os resultados
+
+    # Exercicio a) -- similar ao 04. alteracao_cores
+    transf_matrix = get_array("sepia") # matriz de transformacao
+    transf = np.dot(image, transf_matrix.T) # aplica a transformacao
+    transf[transf > 255] = 255 # limita a [0, 255]
+    result = cv.cvtColor(transf.astype(np.uint8), cv.COLOR_RGB2BGR) # cv2 usa BGR
+    results["alteracao-cores"] = result
+
+    # Exercicio b)
+    transf_matrix = get_array("rgbtogray") # matriz de transformacao
+    result = np.dot(image, transf_matrix.T).astype(np.uint8) # aplica a transformacao
+    results["transformacao-banda"] = result
+
+    return results
 
 # 06
 def plano_bits(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
-    plain_list = [0, 4, 7]
-    results = {}
+    results = {} # guarda os resultados
+
+    # Calcula cada plano de bit
+    plain_list = [0, 1, 2, 3, 4, 5, 6, 7]
     for plain in plain_list:
         result = np.bitwise_and(image, 0b1 << plain) # image & (1 << plain)
-        cv.normalize(result, result, 0, 255, cv.NORM_MINMAX) # inplace
+        result[result > 0] = 255 # converte para [0, 255]
         results[f"plano-bit-{plain}"] = result
+    
     return results
 
 # 07
 def combinacao_imagens(image_name_1: str = "baboon_monocromatica.png", image_name_2: str = "butterfly.png") -> dict[str, np.ndarray]:
     image_1 = cv.imread(get_image_path(image_name_1), cv.IMREAD_GRAYSCALE)
     image_2 = cv.imread(get_image_path(image_name_2), cv.IMREAD_GRAYSCALE)
+    results = {} # guarda os resultados
+
     weights = [
         (0.2, 0.8),
         (0.5, 0.5),
-        (0.8, 0.2)
+        (0.8, 0.2),
     ]
-    results = {}
+    # Aplica a combinacao de imagens
     for i, (w1, w2) in enumerate(weights):
-        result = (np.add(np.multiply(w1, image_1), np.multiply(w2, image_2))).astype(np.uint8)
+        result = (np.floor(w1*image_1 + w2*image_2)).astype(np.uint8)
         results[f"combinacao-{i+1}"] = result
+
     return results
 
 # 08
@@ -108,27 +156,31 @@ def process_and_handle_exercise(
                 result = exercise_function(image_name_1, image_name_2)
             else:
                 result = exercise_function(image_name_1)
-            handle_result(result, exercise_number, save, display)
+            if not handle_result(result, exercise_number, save, display):
+                return
     else:  # Exercises that require one image
         if image_names:
             for image_name in image_names:
                 result = exercise_function(image_name)
-                handle_result(result, exercise_number, save, display)
+                if not handle_result(result, exercise_number, save, display):
+                    return
         else:  # Default image name
             result = exercise_function()
-            handle_result(result, exercise_number, save, display)
+            if not handle_result(result, exercise_number, save, display):
+                return
 
 def handle_result(
         result: dict[str, np.ndarray],
         exercise_number: int,
         save: bool,
         display: bool
-        ) -> None:
+        ) -> bool:
     if result:
         if save:
             save_images(result, exercise_number)
         if display:
-            display_images(result)
+            return display_images(result) # retorna falso se o usuario pressionar 'n'
+    return True
 
 def main(args: argparse.Namespace) -> None:
     exercises = {
@@ -169,7 +221,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.i and args.i[0].lower() == 'all':
-        args.i = os.listdir(IMAGE_FOLDER)
+        args.i = os.listdir(get_image_path(''))
 
     # All exercises by default
     args.e = range(1, 11) if not args.e else [ex for ex in args.e if 1 <= ex <= 10]
