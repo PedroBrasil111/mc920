@@ -1,5 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-    \PYG{k+kn}{import} \PYG{n+nn}{cv2}
-    \PYG{n}{img} \PYG{o}{=} \PYG{n}{cv2}\PYG{o}{.}\PYG{n}{imread}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}image.png\PYGZdq{}}\PYG{p}{)}
-    \PYG{n}{cv2}\PYG{o}{.}\PYG{n}{imshow}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}Display\PYGZdq{}}\PYG{p}{,} \PYG{n}{img}\PYG{p}{)}
-\end{Verbatim}

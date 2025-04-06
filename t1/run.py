@@ -5,7 +5,7 @@ from helper_functions import get_image_path, save_images, display_images
 import numpy as np
 import os
 
-# 01
+### 01
 def esboco_lapis(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR)
 
@@ -18,9 +18,10 @@ def esboco_lapis(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     blurred_image = cv.GaussianBlur(gray_image, ksize, sigma)
     result = cv.divide(gray_image, blurred_image, scale=255).astype(np.uint8)
 
-    return {"esboco-lapis": result}
+    return {"esboco_lapis": result}
 
-# 02
+
+### 02
 def ajuste_brilho(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
     results = {} # guarda os resultados
@@ -32,10 +33,11 @@ def ajuste_brilho(image_name: str = "baboon_monocromatica.png") -> dict[str, np.
     alpha_list = [0.5, 2.5, 4.5,]
     for i, alpha in enumerate(alpha_list):
         result = np.floor(np.power(image, 1/alpha) * 255).astype(np.uint8)
-        results[f"ajuste-brilho-{i+1}"] = result
+        results[f"ajuste_brilho_{str(alpha).replace('.', '_')}"] = result
     return results
 
-# 03
+
+### 03
 def mosaico(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
 
@@ -64,7 +66,8 @@ def mosaico(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarra
 
     return {"mosaico": mosaic}
 
-# 04
+
+### 04
 def alteracao_cores(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR_RGB)
 
@@ -74,9 +77,10 @@ def alteracao_cores(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     result = cv.normalize(transf, None, 0, 255, cv.NORM_MINMAX).astype(np.uint8) # normaliza para [0, 255]
     cv.cvtColor(result, cv.COLOR_RGB2BGR, dst=result) # cv2 usa BGR
 
-    return {"alteracao-cores": result}
+    return {"alteracao_cores": result}
 
-# 05
+
+### 05
 def transformacao_imagens_coloridas(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR)
     results = {} # guarda os resultados
@@ -86,16 +90,17 @@ def transformacao_imagens_coloridas(image_name: str = "watch.png") -> dict[str, 
     transf = np.dot(image, transf_matrix.T) # aplica a transformacao
     transf[transf > 255] = 255 # limita a [0, 255]
     result = cv.cvtColor(transf.astype(np.uint8), cv.COLOR_RGB2BGR) # cv2 usa BGR
-    results["alteracao-cores"] = result
+    results["alteracao_cores"] = result
 
     # Exercicio b)
     transf_matrix = get_array("rgbtogray") # matriz de transformacao
     result = np.dot(image, transf_matrix.T).astype(np.uint8) # aplica a transformacao
-    results["transformacao-banda"] = result
+    results["transformacao_banda"] = result
 
     return results
 
-# 06
+
+### 06
 def plano_bits(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
     results = {} # guarda os resultados
@@ -105,11 +110,12 @@ def plano_bits(image_name: str = "baboon_monocromatica.png") -> dict[str, np.nda
     for plain in plain_list:
         result = np.bitwise_and(image, 0b1 << plain) # image & (1 << plain)
         result[result > 0] = 255 # converte de 2**plain para 255
-        results[f"plano-bit-{plain}"] = result
+        results[f"plano_bit_{plain}"] = result
     
     return results
 
-# 07
+
+### 07
 def combinacao_imagens(image_name_1: str = "baboon_monocromatica.png", image_name_2: str = "butterfly.png") -> dict[str, np.ndarray]:
     image_1 = cv.imread(get_image_path(image_name_1), cv.IMREAD_GRAYSCALE)
     image_2 = cv.imread(get_image_path(image_name_2), cv.IMREAD_GRAYSCALE)
@@ -123,11 +129,12 @@ def combinacao_imagens(image_name_1: str = "baboon_monocromatica.png", image_nam
     # Aplica a combinacao de imagens
     for i, (w1, w2) in enumerate(weights):
         result = (np.floor(w1*image_1 + w2*image_2)).astype(np.uint8)
-        results[f"combinacao-{i+1}"] = result
+        results[f"combinacao_{i+1}"] = result
 
     return results
 
-# 08
+
+### 08
 def transformacao_intensidade(image_name: str = "city.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
     nrows, ncols = image.shape
@@ -156,14 +163,15 @@ def transformacao_intensidade(image_name: str = "city.png") -> dict[str, np.ndar
     results = {
         "negativo": negativo,
         "transformada": transformada,
-        "linhas-pares-invertidas": linhas_pares_invertidas,
-        "reflexao-linhas": reflexao_linhas,
-        "espelhamento-vertical": reflexao_vertical
+        "linhas_pares_invertidas": linhas_pares_invertidas,
+        "reflexao_linhas": reflexao_linhas,
+        "espelhamento_vertical": reflexao_vertical
     }
 
     return results
 
-# 09
+
+### 09
 def quantizacao_imagens(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
     results = {} # guarda os resultados
@@ -176,12 +184,13 @@ def quantizacao_imagens(image_name: str = "baboon_monocromatica.png") -> dict[st
         result = np.floor(image / delta) * delta
         # Normalizacao e conversao para uint8
         cv.normalize(result, result, 0, 255, cv.NORM_MINMAX) # inplace
-        results[f"quantizacao-{levels}"] = result.astype(np.uint8)
+        results[f"quantizacao_{levels}"] = result.astype(np.uint8)
 
     return results
 
-# 10
-def filtragem_imagens(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
+
+### 10
+def filtragem_imagens(image_name: str = "waterfall_cinza.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
     kernel_dict = get_kernels() # chaves: h1 até h11
     results = {} # guarda os resultados
@@ -193,14 +202,11 @@ def filtragem_imagens(image_name: str = "baboon_monocromatica.png") -> dict[str,
         cv.BORDER_REPLICATE
         )
 
-    # Aplica os filtros
+    # Realiza a convolucao com cada filtro
     for kernel_name, kernel in kernel_dict.items():
-        # Convolui a máscara pela imagem com padding
-        result = cv.filter2D(padded, -1, kernel)
-        # Remove o padding
-        result = result[pad_r:-pad_r, pad_c:-pad_c]
-        # Normaliza e converte para uint8
-        cv.normalize(result, result, 0, 255, cv.NORM_MINMAX)
+        kernel = cv.flip(kernel, -1) # inversao horizontal e vertical
+        result = cv.filter2D(padded, -1, kernel) # convolucao (ddepth = -1 mantem o tipo de dado)
+        result = result[pad_r:-pad_r, pad_c:-pad_c] # remove o padding
         results[kernel_name] = result.astype(np.uint8)
 
     # Combina os resultados das aplicacoes de h3 e h4
@@ -308,6 +314,7 @@ def main(args: argparse.Namespace) -> None:
             )
         except Exception as e: # programa nao encerra quando um exercicio falha
             print(f"\033[91mError processing exercise {exercise_number}: {e}\033[0m") # vermelho
+        print("\033[92mDone\033[0m") # verde
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process images with various exercises.')
@@ -319,7 +326,7 @@ if __name__ == '__main__':
 
     # Todas as imagens
     if args.i and args.i[0].lower() == 'all':
-        args.i = os.listdir(get_image_path(''))
+        args.i = [file for file in os.listdir(get_image_path('')) if not file.startswith('.')]
     # Todos os exercicios por padrao, e limita entrada a 1-10
     args.e = range(1, 11) if not args.e else [ex for ex in args.e if 1 <= ex <= 10]
 
