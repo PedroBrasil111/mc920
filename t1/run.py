@@ -5,8 +5,6 @@ from helper_functions import get_image_path, save_images, display_images
 import numpy as np
 import os
 
-import time
-
 # 01
 def esboco_lapis(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR)
@@ -49,15 +47,15 @@ def mosaico(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarra
         12: 3, 13: 14, 14: 9,  15: 4,
     }
 
-    # Calcula o tamanho dos blocos (4x4)
+    # Calcula as dimensões dos blocos
     nrows, ncols = image.shape
     block_height = nrows // 4
     block_width  = ncols // 4
 
+    # Aplica o efeito de mosaico
     mosaic = np.zeros((nrows, ncols), dtype=np.uint8) # mosaico inicializado com 0's
-    # Preenche o mosaico com os blocos
     for new_block, prev_block in mapping.items():
-        # Calcula onde o bloco anterior vai ser colocado
+        # Calcula origens (ponto superior esquerdo) dos blocos
         prev_origin_row, prev_origin_col = (block_height * (prev_block // 4), block_width * (prev_block % 4))
         new_origin_row, new_origin_col = (block_height * (new_block // 4), block_width * (new_block % 4))
         # Copia o bloco da posicao anterior para a nova posicao
@@ -83,7 +81,7 @@ def transformacao_imagens_coloridas(image_name: str = "watch.png") -> dict[str, 
     image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR)
     results = {} # guarda os resultados
 
-    # Exercicio a) -- similar ao 04. alteracao_cores
+    # Exercicio a)
     transf_matrix = get_array("sepia") # matriz de transformacao
     transf = np.dot(image, transf_matrix.T) # aplica a transformacao
     transf[transf > 255] = 255 # limita a [0, 255]
@@ -106,7 +104,7 @@ def plano_bits(image_name: str = "baboon_monocromatica.png") -> dict[str, np.nda
     plain_list = [0, 1, 2, 3, 4, 5, 6, 7]
     for plain in plain_list:
         result = np.bitwise_and(image, 0b1 << plain) # image & (1 << plain)
-        result[result > 0] = 255 # converte para [0, 255]
+        result[result > 0] = 255 # converte de 2**plain para 255
         results[f"plano-bit-{plain}"] = result
     
     return results
@@ -131,13 +129,58 @@ def combinacao_imagens(image_name_1: str = "baboon_monocromatica.png", image_nam
 
 # 08
 def transformacao_intensidade(image_name: str = "city.png") -> dict[str, np.ndarray]:
-    return None
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
+    nrows, ncols = image.shape
+
+    # Item b)
+    negativo = np.subtract(255, image)
+
+    # Item c)
+    transformada = np.clip(image, 100, 200)
+    cv.normalize(transformada, transformada, 0, 255, cv.NORM_MINMAX) # normaliza para [0, 255] inplace
+
+    # Item d)
+    linhas_pares_invertidas = image.copy()
+    linhas_pares_invertidas[::2] = np.fliplr(linhas_pares_invertidas[::2])
+
+    # Item e)
+    reflexao_linhas = image.copy()
+    if nrows & 1 == 0: # numero par de linhas
+        reflexao_linhas[nrows//2:] = np.flipud(reflexao_linhas[:nrows//2])
+    else: # numero impar (parte flipada comeca uma linha na frente)
+        reflexao_linhas[nrows//2 + 1:] = np.flipud(reflexao_linhas[:nrows//2])
+
+    # Item f)
+    reflexao_vertical = np.flipud(image)
+
+    results = {
+        "negativo": negativo,
+        "transformada": transformada,
+        "linhas-pares-invertidas": linhas_pares_invertidas,
+        "reflexao-linhas": reflexao_linhas,
+        "espelhamento-vertical": reflexao_vertical
+    }
+
+    return results
 
 # 09
 def quantizacao_imagens(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
-    return None
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
+    results = {} # guarda os resultados
 
-# 10 
+    # Aplica a quantizacao
+    quantization_levels = [128, 32, 16, 8, 4, 3, 2]
+    for i, quantization_level in enumerate(quantization_levels):
+        # Quantizacao uniforme
+        delta = 255 / quantization_level
+        result = np.floor(image / delta) * delta + delta/2
+        # Normalizacao e conversao para uint8
+        cv.normalize(result, result, 0, 255, cv.NORM_MINMAX) # inplace
+        results[f"quantizacao-{quantization_level}"] = result.astype(np.uint8)
+
+    return results
+
+# 10
 def filtragem_imagens(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     return None
 
@@ -148,7 +191,21 @@ def process_and_handle_exercise(
         save: bool,
         display: bool
         ) -> None:
-    if image_names and exercise_number == 7:  # Special case for exercise 7 (requires two images)
+    """
+    Processa a imagem usando a funcao exercise_function e lida com o resultado.
+    Se o resultado for um dicionario, salva e/ou exibe as imagens.
+    Se o resultado for None, encerra.
+    """
+    # Verifica quais imagens existem
+    for image_name in image_names:
+        if not os.path.isfile(get_image_path(image_name)):
+            print(f"\033[91mImage {image_name} not found.\033[0m") # vermelho
+            image_names.remove(image_name)
+            if not image_names:  # encerra se nenhuma imagem for encontrada
+                print("\033[91mNo valid images found.\033[0m") # vermelho
+                return
+    # Caso especial para o exercicio 7, que combina duas imagens
+    if image_names and exercise_number == 7:
         for i in range(0, len(image_names), 2):
             image_name_1 = image_names[i]
             if i + 1 < len(image_names):
@@ -158,13 +215,14 @@ def process_and_handle_exercise(
                 result = exercise_function(image_name_1)
             if not handle_result(result, exercise_number, save, display):
                 return
-    else:  # Exercises that require one image
+    # Exercicios que requerem uma imagens
+    else: 
         if image_names:
             for image_name in image_names:
                 result = exercise_function(image_name)
                 if not handle_result(result, exercise_number, save, display):
                     return
-        else:  # Default image name
+        else:  # usa a imagem padrao se nenhuma for fornecida
             result = exercise_function()
             if not handle_result(result, exercise_number, save, display):
                 return
@@ -175,6 +233,11 @@ def handle_result(
         save: bool,
         display: bool
         ) -> bool:
+    """
+    Lida com o resultado da funcao de exercicio.
+    Se o resultado for um dicionario, salva e/ou exibe as imagens.
+    Se o resultado for None, encerra.
+    """
     if result:
         if save:
             save_images(result, exercise_number)
@@ -183,6 +246,9 @@ def handle_result(
     return True
 
 def main(args: argparse.Namespace) -> None:
+    """
+    Funcao principal que processa os argumentos e executa os exercicios.
+    """
     exercises = {
         1: esboco_lapis,
         2: ajuste_brilho,
@@ -195,12 +261,15 @@ def main(args: argparse.Namespace) -> None:
         9: quantizacao_imagens,
         10: filtragem_imagens,
     }
-    if not (args.d or args.s):
-        print("\033[91mNo action specified. Use -s to save images and/or -d to display them.\033[0m")
+    if not (args.d or args.s): # acao nao especificada
+        print("\033[91mNo action specified. Use -s to save images and/or -d to display them.\033[0m") # vermelho
         return
+    
+    if not args.e: # exercicios fora do intervalo
+        print("\033[91mAllowed exercises are 1-10.\033[0m") # vermelho
 
     for exercise_number in args.e:
-        print(f"\033[94mProcessing exercise {exercise_number}...\033[0m")
+        print(f"\033[94mProcessing exercise {exercise_number}...\033[0m") # azul
         try:
             process_and_handle_exercise(
                 exercises[exercise_number],
@@ -209,8 +278,8 @@ def main(args: argparse.Namespace) -> None:
                 args.s,
                 args.d
             )
-        except Exception as e:
-            print(f"\033[91mError processing exercise {exercise_number}: {e}\033[0m")
+        except Exception as e: # programa nao encerra quando um exercicio falha
+            print(f"\033[91mError processing exercise {exercise_number}: {e}\033[0m") # vermelho
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process images with various exercises.')
@@ -220,9 +289,10 @@ if __name__ == '__main__':
     parser.add_argument('-d', action='store_true', help='Display processed images')
     args = parser.parse_args()
 
+    # Todas as imagens
     if args.i and args.i[0].lower() == 'all':
         args.i = os.listdir(get_image_path(''))
-
-    # All exercises by default
+    # Todos os exercicios por padrao, e limita entrada a 1-10
     args.e = range(1, 11) if not args.e else [ex for ex in args.e if 1 <= ex <= 10]
+
     main(args)
