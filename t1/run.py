@@ -169,20 +169,47 @@ def quantizacao_imagens(image_name: str = "baboon_monocromatica.png") -> dict[st
     results = {} # guarda os resultados
 
     # Aplica a quantizacao
-    quantization_levels = [128, 32, 16, 8, 4, 3, 2]
-    for i, quantization_level in enumerate(quantization_levels):
+    levels_list = [128, 32, 16, 8, 4, 3, 2]
+    for levels in levels_list:
         # Quantizacao uniforme
-        delta = 255 / quantization_level
-        result = np.floor(image / delta) * delta + delta/2
+        delta = 256 / levels
+        result = np.floor(image / delta) * delta
         # Normalizacao e conversao para uint8
         cv.normalize(result, result, 0, 255, cv.NORM_MINMAX) # inplace
-        results[f"quantizacao-{quantization_level}"] = result.astype(np.uint8)
+        results[f"quantizacao-{levels}"] = result.astype(np.uint8)
 
     return results
 
 # 10
 def filtragem_imagens(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
-    return None
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
+    kernel_dict = get_kernels() # chaves: h1 até h11
+    results = {} # guarda os resultados
+
+    # Realiza padding de 4 pixels com replicacao da borda
+    pad_r = pad_c = 4
+    padded = cv.copyMakeBorder(
+        image, pad_r, pad_r, pad_c, pad_c,
+        cv.BORDER_REPLICATE
+        )
+
+    # Aplica os filtros
+    for kernel_name, kernel in kernel_dict.items():
+        # Convolui a máscara pela imagem com padding
+        result = cv.filter2D(padded, -1, kernel)
+        # Remove o padding
+        result = result[pad_r:-pad_r, pad_c:-pad_c]
+        # Normaliza e converte para uint8
+        cv.normalize(result, result, 0, 255, cv.NORM_MINMAX)
+        results[kernel_name] = result.astype(np.uint8)
+
+    # Combina os resultados das aplicacoes de h3 e h4
+    img3_squared = np.power(results["h3"], 2, dtype=np.uint16)
+    img4_squared = np.power(results["h4"], 2, dtype=np.uint16)
+    combination  = np.sqrt(img3_squared + img4_squared)
+    results["combinacao"] = combination.astype(np.uint8)
+
+    return results
 
 def process_and_handle_exercise(
         exercise_function: callable,
@@ -197,13 +224,14 @@ def process_and_handle_exercise(
     Se o resultado for None, encerra.
     """
     # Verifica quais imagens existem
-    for image_name in image_names:
-        if not os.path.isfile(get_image_path(image_name)):
-            print(f"\033[91mImage {image_name} not found.\033[0m") # vermelho
-            image_names.remove(image_name)
-            if not image_names:  # encerra se nenhuma imagem for encontrada
-                print("\033[91mNo valid images found.\033[0m") # vermelho
-                return
+    if image_names:
+        for image_name in image_names:
+            if not os.path.isfile(get_image_path(image_name)):
+                print(f"\033[91mImage {image_name} not found.\033[0m") # vermelho
+                image_names.remove(image_name)
+                if not image_names:  # encerra se nenhuma imagem for encontrada
+                    print("\033[91mNo valid images found.\033[0m") # vermelho
+                    return
     # Caso especial para o exercicio 7, que combina duas imagens
     if image_names and exercise_number == 7:
         for i in range(0, len(image_names), 2):

@@ -11,19 +11,19 @@ RGBTOGRAY = [
 ]
 
 h1 = np.array(
-    [[0, 0, -1, 0, 0],
-     [0, -1, -2, -1, 0],
+    [[ 0,  0, -1,  0,  0],
+     [ 0, -1, -2, -1,  0],
      [-1, -2, 16, -2, -1],
-     [0, -1, -2, -1, 0],
-     [0, 0, -1, 0, 0]], dtype=np.float32
+     [ 0, -1, -2, -1,  0],
+     [ 0,  0, -1,  0,  0]], dtype=np.float32
 )
 
 h2 = np.array(
-    [[1, 4, 6, 4, 1],
+    [[1,  4,  6,  4, 1],
      [4, 16, 24, 16, 4],
      [6, 24, 36, 24, 6],
      [4, 16, 24, 16, 4],
-     [1, 4, 6, 4, 1]], dtype=np.float32
+     [1,  4,  6,  4, 1]], dtype=np.float32
 ) / 256
 
 h3 = np.array(
@@ -34,13 +34,13 @@ h3 = np.array(
 
 h4 = np.array(
     [[-1, -2, -1],
-     [0, 0, 0],
-     [1, 2, 1]], dtype=np.float32
+     [ 0,  0,  0],
+     [ 1,  2,  1]], dtype=np.float32
 )
 
 h5 = np.array(
     [[-1, -1, -1],
-     [-1, 8, -1],
+     [-1,  8, -1],
      [-1, -1, -1]], dtype=np.float32
 )
 
@@ -51,24 +51,24 @@ h6 = np.array(
 ) / 9
 
 h7 = np.array(
-    [[-1, -1, 2],
-     [-1, 2, -1],
-     [2, -1, -1]], dtype=np.float32
+    [[-1, -1,  2],
+     [-1,  2, -1],
+     [ 2, -1, -1]], dtype=np.float32
 )
 
 h8 = np.array(
-    [[2, -1, -1],
-     [-1, 2, -1],
-     [-1, -1, 2]], dtype=np.float32
+    [[ 2, -1, -1],
+     [-1,  2, -1],
+     [-1, -1,  2]], dtype=np.float32
 )
 
 h9 = np.identity(9, dtype=np.float32) / 9
 
 h10 = np.array(
     [[-1, -1, -1, -1, -1],
-     [-1, 2, 2, 2, -1],
-     [-1, 2, 8, 2, -1],
-     [-1, 2, 2, 2, -1],
+     [-1,  2,  2,  2, -1],
+     [-1,  2,  8,  2, -1],
+     [-1,  2,  2,  2, -1],
      [-1, -1, -1, -1, -1]], dtype=np.float32
 ) / 8
 
@@ -95,10 +95,15 @@ array_lookup = {
 }
 
 def get_array(array_name: str) -> np.ndarray:
+    """
+    Retorna o array correspondente ao nome fornecido.
+    """
     if array_name.lower() in array_lookup:
         return np.array(array_lookup[array_name.lower()], dtype=np.float32)
-    else:
-        raise ValueError(f"Unknown kernel name: {array_name}")
+    raise ValueError(f"Unknown kernel name: {array_name}")
 
 def get_kernels() -> dict[str, np.ndarray]:
+    """
+    Retorna um dicionario com os kernels disponiveis (h1 a h11).
+    """
     return {name: get_array(name) for name in array_lookup.keys() if name[0] == "h"}
