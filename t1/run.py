@@ -1,7 +1,9 @@
 import argparse
 import cv2 as cv
 from arrays import get_array, get_kernels
-from helper_functions import get_image_path, save_images, display_images
+from helper_functions import (
+    get_image_path, save_images, display_images
+)
 import numpy as np
 import os
 
@@ -20,7 +22,6 @@ def esboco_lapis(image_name: str = "watch.png") -> dict[str, np.ndarray]:
 
     return {"esboco_lapis": result}
 
-
 ### 02
 def ajuste_brilho(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
@@ -35,7 +36,6 @@ def ajuste_brilho(image_name: str = "baboon_monocromatica.png") -> dict[str, np.
         result = np.floor(np.power(image, 1/alpha) * 255).astype(np.uint8)
         results[f"ajuste_brilho_{str(alpha).replace('.', '_')}"] = result
     return results
-
 
 ### 03
 def mosaico(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
@@ -66,7 +66,6 @@ def mosaico(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarra
 
     return {"mosaico": mosaic}
 
-
 ### 04
 def alteracao_cores(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR_RGB)
@@ -78,7 +77,6 @@ def alteracao_cores(image_name: str = "watch.png") -> dict[str, np.ndarray]:
     cv.cvtColor(result, cv.COLOR_RGB2BGR, dst=result) # cv2 usa BGR
 
     return {"alteracao_cores": result}
-
 
 ### 05
 def transformacao_imagens_coloridas(image_name: str = "watch.png") -> dict[str, np.ndarray]:
@@ -99,7 +97,6 @@ def transformacao_imagens_coloridas(image_name: str = "watch.png") -> dict[str, 
 
     return results
 
-
 ### 06
 def plano_bits(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
@@ -113,7 +110,6 @@ def plano_bits(image_name: str = "baboon_monocromatica.png") -> dict[str, np.nda
         results[f"plano_bit_{plain}"] = result
     
     return results
-
 
 ### 07
 def combinacao_imagens(image_name_1: str = "baboon_monocromatica.png", image_name_2: str = "butterfly.png") -> dict[str, np.ndarray]:
@@ -132,7 +128,6 @@ def combinacao_imagens(image_name_1: str = "baboon_monocromatica.png", image_nam
         results[f"combinacao_{i+1}"] = result
 
     return results
-
 
 ### 08
 def transformacao_intensidade(image_name: str = "city.png") -> dict[str, np.ndarray]:
@@ -170,7 +165,6 @@ def transformacao_intensidade(image_name: str = "city.png") -> dict[str, np.ndar
 
     return results
 
-
 ### 09
 def quantizacao_imagens(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
     image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
@@ -187,7 +181,6 @@ def quantizacao_imagens(image_name: str = "baboon_monocromatica.png") -> dict[st
         results[f"quantizacao_{levels}"] = result.astype(np.uint8)
 
     return results
-
 
 ### 10
 def filtragem_imagens(image_name: str = "waterfall_cinza.png") -> dict[str, np.ndarray]:
@@ -238,6 +231,7 @@ def process_and_handle_exercise(
                 if not image_names:  # encerra se nenhuma imagem for encontrada
                     print("\033[91mNo valid images found.\033[0m") # vermelho
                     return
+
     # Caso especial para o exercicio 7, que combina duas imagens
     if image_names and exercise_number == 7:
         for i in range(0, len(image_names), 2):
@@ -249,6 +243,7 @@ def process_and_handle_exercise(
                 result = exercise_function(image_name_1)
             if not handle_result(result, exercise_number, save, display):
                 return
+
     # Exercicios que requerem uma imagens
     else: 
         if image_names:

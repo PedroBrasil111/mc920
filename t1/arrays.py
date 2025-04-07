@@ -107,26 +107,3 @@ def get_kernels() -> dict[str, np.ndarray]:
     Retorna um dicionario com os kernels disponiveis (h1 a h11).
     """
     return {name: get_array(name) for name in array_lookup.keys() if name[0] == "h"}
-
-# def get_latex():
-#     """
-#     Retorna uma string com os kernels em formato LaTeX.
-#     """
-#     kernels = get_kernels()
-#     latex = ""
-#     for name, kernel in kernels.items():
-#         latex += f"\\[\n"
-#         latex += f"{name[0]}_{name[1:]} = \n"
-#         latex += "\\begin{bmatrix}\n"
-#         for row in kernel:
-#             latex += " & ".join(f"{val:.2f}" for val in row) + "\\\\\n"
-#         latex += "\\end{bmatrix}\n"
-#         latex += "\\]\n\n"
-#     print(latex)
-
-# if __name__ == "__main__":
-#     get_latex()
-#     # print(get_array("h1"))
-#     # print(get_kernels())
-#     # print(get_array("sepia"))
-#     # print(get_array("rgbtogray"))
