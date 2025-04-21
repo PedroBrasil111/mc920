@@ -8,74 +8,54 @@ import numpy as np
 import os
 import time
 
-def meio_tom2(image_name: str = "baboon_colorida.png") -> dict[str, np.ndarray]:
-    image = cv.imread(get_image_path(image_name), cv.IMREAD_COLOR).astype(np.float32)
+def distribute_error(image, row, col, error, kernel):
+    for i in range(kernel.shape[0]):
+        for j in range(-kernel.shape[1] // 2, kernel.shape[1] // 2 + 1):
+            if 0 <= row + i < image.shape[0] and 0 <= col + j < image.shape[1]:
+                image[row + i, col + j] += error * kernel[i, j]
+    return
+    kernel_nrows, kernel_ncols = kernel.shape
 
-    t = time.time()
+    row_start = max(0, row - kernel_nrows // 2)
+    row_end = min(image.shape[0], row + kernel_nrows // 2 + 1)
+    col_start = max(0, col - kernel_ncols // 2)
+    col_end = min(image.shape[1], col + kernel_ncols // 2 + 1)
 
-    floyd = get_array("floyd_steinberg")
-    flipped = np.fliplr(floyd)
-    half_r, half_c = floyd.shape[0] // 2, floyd.shape[1] // 2
+    kernel_row_offset = row_start - row + kernel_nrows // 2
+    kernel_col_offset = col_start - col + kernel_ncols // 2
 
-    for r in range(image.shape[0]):
-        iter_c = range(image.shape[1]) if r % 2 == 0 else range(image.shape[1] - 1, -1, -1)
-        k = floyd if r % 2 == 0 else flipped
-        for c in iter_c:
-            aux = np.where(image[r, c] < 128, 0, 1)
-            err = image[r, c] - aux*255
-            image[r, c] = aux
-
-            for i in range(0, floyd.shape[0]):
-                for j in range(-half_c, half_c + 1):
-
-                    if (r + i >= 0 and r + i < image.shape[0] and
-                            c + j >= 0 and c + j < image.shape[1]):
-                        image[r + i, c + j] += err * k[i, j + half_c]
-
-    image = (image * 255).astype(np.uint8)
-    print(f"PIXELS NOT IN {0, 255}:", np.sum(np.where(~((image == 0) | (image == 255)), 1, 0)))
-    #cv.imshow("Original", image)
-
-    print("Time taken:", time.time() - t)
-
-    cv.imshow("Floyd-Steinberg", image)
-    cv.waitKey(0)
-
-    return image
-
+    image[row_start:row_end, col_start:col_end] += (
+        error * kernel[kernel_row_offset:kernel_row_offset + (row_end - row_start),
+                       kernel_col_offset:kernel_col_offset + (col_end - col_start)]
+    )
 
 def meio_tom(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
-    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE).astype(np.float32)
+    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
+    image = image.astype(np.float32)
+    nrows, ncols = image.shape[:2]
 
-    t = time.time()
+    kernel_dict = get_all_arrays()
+    result_images = {}
 
-    floyd = get_array("floyd_steinberg")
-    flipped = np.fliplr(floyd)
-    half_r, half_c = floyd.shape[0] // 2, floyd.shape[1] // 2
+    for kernel_name, kernel in kernel_dict.items():
+        flipped_kernel = np.fliplr(kernel)
+        start_time = time.time()
+        output = image.copy()
 
-    for r in range(image.shape[0]):
-        iter_c = range(image.shape[1]) if r % 2 == 0 else range(image.shape[1] - 1, -1, -1)
-        k = floyd if r % 2 == 0 else flipped
-        for c in iter_c:
-            aux = np.where(image[r, c] < 128, 0, 1)
-            err = image[r, c] - aux*255
-            image[r, c] = aux
+        for r in range(nrows):
+            col_range = range(ncols) if r % 2 == 0 else range(ncols - 1, -1, -1)
+            current_kernel = kernel if r % 2 == 0 else flipped_kernel
 
-            slc_r = slice(r, min(r + floyd.shape[0], image.shape[0]))
-            slc_c = slice(max(0, c - half_c), min(c + half_c + 1, image.shape[1]))
+            for c in col_range:
+                thresholded = np.where(output[r, c] < 128, 0, 255)
+                error = output[r, c] - thresholded
+                output[r, c] = thresholded
+                distribute_error(output, r, c, error, current_kernel)
 
-            image[slc_r, slc_c] += err * k[:slc_r.stop - slc_r.start, half_c + slc_c.start - c:half_c + slc_c.stop - c]
+        result_images[f"meio_tom_{kernel_name}"] = output.astype(np.uint8)
+        print(f"Time taken - {kernel_name}: {time.time() - start_time}")
 
-    image = (image * 255).astype(np.uint8)
-    print(f"PIXELS NOT IN {0, 255}:", np.sum(np.where(~((image == 0) | (image == 255)), 1, 0)))
-    #cv.imshow("Original", image)
-
-    print("Time taken:", time.time() - t)
-
-    cv.imshow("Floyd-Steinberg", image)
-    cv.waitKey(0)
-
-    return image
+    return result_images
 
 ### 02
 def filtragem_frequencia(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
@@ -101,31 +81,14 @@ def process_and_handle_exercise(
                 image_names.remove(image_name)
                 if not image_names:  # encerra se nenhuma imagem for encontrada
                     print("\033[91mNo valid images found.\033[0m") # vermelho
-                    return
-
-    # Caso especial para o exercicio 7, que combina duas imagens
-    if image_names and exercise_number == 7:
-        for i in range(0, len(image_names), 2):
-            image_name_1 = image_names[i]
-            if i + 1 < len(image_names):
-                image_name_2 = image_names[i + 1]
-                result = exercise_function(image_name_1, image_name_2)
-            else:
-                result = exercise_function(image_name_1)
+                    continue
+            result = exercise_function(image_name)
             if not handle_result(result, exercise_number, save, display):
                 return
-
-    # Exercicios que requerem uma imagens
-    else: 
-        if image_names:
-            for image_name in image_names:
-                result = exercise_function(image_name)
-                if not handle_result(result, exercise_number, save, display):
-                    return
-        else:  # usa a imagem padrao se nenhuma for fornecida
-            result = exercise_function()
-            if not handle_result(result, exercise_number, save, display):
-                return
+    else:  # usa a imagem padrao se nenhuma for fornecida
+        result = exercise_function()
+        if not handle_result(result, exercise_number, save, display):
+            return
 
 def handle_result(
         result: dict[str, np.ndarray],
@@ -175,10 +138,8 @@ def main(args: argparse.Namespace) -> None:
         print("\033[92mDone\033[0m") # verde
 
 if __name__ == '__main__':
-    res1 = meio_tom()
-    res2 = meio_tom2()
-    print("Results are the same" if np.array_equal(res1, res2) else "Results are different")
-    """
+    meio_tom()
+    exit()
     parser = argparse.ArgumentParser(description='Process images with various exercises.')
     parser.add_argument('-i', nargs='+', type=str, help='List of image names (or all)')
     parser.add_argument('-e', nargs='+', type=int, help='List of exercise numbers (1-10) - default: all')
@@ -193,4 +154,3 @@ if __name__ == '__main__':
     args.e = range(1, 3) if not args.e else [ex for ex in args.e if 1 <= ex <= 2]
 
     main(args)
-    """
