@@ -1,0 +1,65 @@
+distribute_error_slice
+
+Time taken for noise_16.png: 0.001956462860107422 seconds
+
+Time taken for noise_32.png: 0.007599830627441406 seconds
+
+Time taken for noise_64.png: 0.03128552436828613 seconds
+
+Time taken for noise_128.png: 0.11961698532104492 seconds
+
+Time taken for noise_256.png: 0.5218896865844727 seconds
+
+Time taken for noise_512.png: 1.924696445465088 seconds
+
+Time taken for noise_1024.png: 8.333901405334473 seconds
+
+Time taken for noise_16_RGB.png: 0.002424001693725586 seconds
+
+Time taken for noise_32_RGB.png: 0.010436773300170898 seconds
+
+Time taken for noise_64_RGB.png: 0.039342403411865234 seconds
+
+Time taken for noise_128_RGB.png: 0.15809273719787598 seconds
+
+Time taken for noise_256_RGB.png: 0.6077158451080322 seconds
+
+Time taken for noise_512_RGB.png: 2.292295455932617 seconds
+
+Time taken for noise_1024_RGB.png: 8.991080284118652 seconds
+
+distribute_error_for
+
+Time taken for noise_16.png: 0.0021026134490966797 seconds
+
+Time taken for noise_32.png: 0.00781702995300293 seconds
+
+Time taken for noise_64.png: 0.03144264221191406 seconds
+
+Time taken for noise_128.png: 0.12009239196777344 seconds
+
+Time taken for noise_256.png: 0.48999857902526855 seconds
+
+Time taken for noise_512.png: 1.9793622493743896 seconds
+
+Time taken for noise_1024.png: 8.021419048309326 seconds
+
+Time taken for noise_16_RGB.png: 0.004249095916748047 seconds
+
+Time taken for noise_32_RGB.png: 0.01627969741821289 seconds
+
+Time taken for noise_64_RGB.png: 0.06550455093383789 seconds
+
+Time taken for noise_128_RGB.png: 0.2750966548919678 seconds
+
+Time taken for noise_256_RGB.png: 1.0679931640625 seconds
+
+Time taken for noise_512_RGB.png: 4.350062608718872 seconds
+
+Time taken for noise_1024_RGB.png: 17.814399480819702 seconds
+
+Slice gray total time: 10.940946340560913
+Slice RGB total time: 12.10138750076294
+
+For gray total time: 10.652234554290771
+For RGB total time: 23.59358525276184

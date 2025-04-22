@@ -2,58 +2,77 @@ import argparse
 import cv2 as cv
 from arrays import get_array, get_all_arrays
 from helper_functions import (
-    get_image_path, save_images, display_images
+    get_image_path, save_images, display_images, imread_auto
 )
 import numpy as np
 import os
-import time
 
-def distribute_error(image, row, col, error, kernel):
-    for i in range(kernel.shape[0]):
-        for j in range(-kernel.shape[1] // 2, kernel.shape[1] // 2 + 1):
-            if 0 <= row + i < image.shape[0] and 0 <= col + j < image.shape[1]:
-                image[row + i, col + j] += error * kernel[i, j]
-    return
+def spread_error(
+        image: np.ndarray, row: int, col: int,
+        error: np.ndarray | np.float64, kernel: np.ndarray
+        ) -> None: 
+    """
+    Aplica a distribuicao de erro na vizinhanca de (row, col) na imagem.
+    O erro eh distribuido para os pixels proximos de acordo com a matriz
+    de distribuicao de erro (kernel).
+    """
     kernel_nrows, kernel_ncols = kernel.shape
+    half_kcols = kernel_ncols // 2
 
-    row_start = max(0, row - kernel_nrows // 2)
-    row_end = min(image.shape[0], row + kernel_nrows // 2 + 1)
-    col_start = max(0, col - kernel_ncols // 2)
-    col_end = min(image.shape[1], col + kernel_ncols // 2 + 1)
+    # indices para slice da imagem
+    row_end   = min(image.shape[0], row + kernel_nrows)
+    col_start = max(0, col - half_kcols)
+    col_end   = min(image.shape[1], col + half_kcols + 1)
 
-    kernel_row_offset = row_start - row + kernel_nrows // 2
-    kernel_col_offset = col_start - col + kernel_ncols // 2
+    # slicing do kernel (apenas parte "dentro da imagem")
+    col_offset = max(0, half_kcols - col)
+    subkernel = kernel[:row_end - row,
+                       col_offset:col_offset + (col_end - col_start)
+                      ]
+    if len(error.shape) > 0: # broadcasting quando imagem tem mais de um canal
+        subkernel = subkernel[:, :, np.newaxis]
 
-    image[row_start:row_end, col_start:col_end] += (
-        error * kernel[kernel_row_offset:kernel_row_offset + (row_end - row_start),
-                       kernel_col_offset:kernel_col_offset + (col_end - col_start)]
-    )
+    # aplica a distribuicao de erro
+    image[row:row_end, col_start:col_end] += subkernel * error
 
-def meio_tom(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
-    image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
-    image = image.astype(np.float32)
+def apply_error_diffusion(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+    """
+    Aplica a tecnica de meio tom com difusao de erro na imagem usando
+    a matriz de distribuicao de erro fornecida (kernel).
+    Retorna a imagem resultante.
+    """
     nrows, ncols = image.shape[:2]
+    image = image.astype(np.float32) # difusao de erro requer operacoes com float
+    output = image.copy() # difusao sera feita inplace no output
+    flipped_kernel = np.fliplr(kernel)
+    for r in range(nrows):
+        # inverte direcao de varredura a cada linha
+        col_range = range(ncols) if r % 2 == 0 else range(ncols - 1, -1, -1)
+        current_kernel = kernel if r % 2 == 0 else flipped_kernel
+        # varre a linha
+        for c in col_range:
+            # operacoes sao feitas em todos os canais
+            thresholded = np.where(output[r, c] < 128, 0, 255)
+            error = output[r, c] - thresholded
+            output[r, c] = thresholded
+            # distribui o erro para os pixels proximos
+            spread_error(output, r, c, error, current_kernel)
+    return output
 
-    kernel_dict = get_all_arrays()
-    result_images = {}
+### 01
+def meio_tom(image_name: str = "baboon_monocromatica.png") -> dict[str, np.ndarray]:
+    """
+    Aplica a tecnica de meio tom com difusao de erro na imagem usando
+    as matrizes de distribuicao de erro fornecidas.
+    Retorna um dicionario com as imagens resultantes.
+    """
+    image = imread_auto(get_image_path(image_name)) # numero de canais baseado na imagem
+    result_images = {} # armazena as imagens resultantes
+    kernel_dict = get_all_arrays() # dicionario com as matrizes de distribuicao de erro
 
     for kernel_name, kernel in kernel_dict.items():
-        flipped_kernel = np.fliplr(kernel)
-        start_time = time.time()
-        output = image.copy()
-
-        for r in range(nrows):
-            col_range = range(ncols) if r % 2 == 0 else range(ncols - 1, -1, -1)
-            current_kernel = kernel if r % 2 == 0 else flipped_kernel
-
-            for c in col_range:
-                thresholded = np.where(output[r, c] < 128, 0, 255)
-                error = output[r, c] - thresholded
-                output[r, c] = thresholded
-                distribute_error(output, r, c, error, current_kernel)
-
+        output = apply_error_diffusion(image, kernel)
         result_images[f"meio_tom_{kernel_name}"] = output.astype(np.uint8)
-        print(f"Time taken - {kernel_name}: {time.time() - start_time}")
 
     return result_images
 
@@ -98,8 +117,7 @@ def handle_result(
         ) -> bool:
     """
     Lida com o resultado da funcao de exercicio.
-    Se o resultado for um dicionario, salva e/ou exibe as imagens.
-    Se o resultado for None, encerra.
+    Salva e/ou exibe as imagens resultantes.
     """
     if result:
         if save:
@@ -138,8 +156,6 @@ def main(args: argparse.Namespace) -> None:
         print("\033[92mDone\033[0m") # verde
 
 if __name__ == '__main__':
-    meio_tom()
-    exit()
     parser = argparse.ArgumentParser(description='Process images with various exercises.')
     parser.add_argument('-i', nargs='+', type=str, help='List of image names (or all)')
     parser.add_argument('-e', nargs='+', type=int, help='List of exercise numbers (1-10) - default: all')

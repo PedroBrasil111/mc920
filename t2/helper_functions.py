@@ -50,3 +50,29 @@ def get_image_path(image_name: str) -> str:
     O nome da imagem deve incluir a extensao (ex: 'waterfall.png').
     """
     return os.path.join(IMAGE_FOLDER, image_name)
+
+
+def isgray(image: ndarray) -> bool:
+    """
+    Verifica se a imagem eh monocromatica.
+    Retorna True se a imagem for monocromatica, False caso contrario.
+
+    Adaptado de:
+    https://stackoverflow.com/questions/23660929/
+    """
+    if len(image.shape) < 3: return True
+    if image.shape[2]  == 1: return True
+    b,g,r = image[:,:,0], image[:,:,1], image[:,:,2]
+    if (b==g).all() and (b==r).all(): return True
+    return False
+
+def imread_auto(image_path: str) -> ndarray:
+    """
+    Retorna a imagem lida do caminho especificado.
+    Se a imagem for monocromatica, retorna uma imagem com 1 canal.
+    Se a imagem for colorida, retorna a imagem original.
+    """
+    image = cv.imread(image_path, cv.IMREAD_COLOR)
+    if isgray(image):
+        return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    return image
