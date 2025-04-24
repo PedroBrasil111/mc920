@@ -40,7 +40,7 @@ def distribute_error_slice(
     col_start = max(0, col - half_kcols)
     col_end   = min(image.shape[1], col + half_kcols + 1)
 
-    # slicing do kernel (apenas parte "dentro da imagem")
+    # slicing do kernel (seleciona parte "dentro da imagem")
     col_offset = max(0, half_kcols - col)
     subkernel = kernel[:row_end - row,
                        col_offset:col_offset + (col_end - col_start)
@@ -61,7 +61,7 @@ def apply_error_diffusion(image: np.ndarray,
     Retorna a imagem resultante.
     """
     nrows, ncols = image.shape[:2]
-    image = image.astype(np.float32) # difusao de erro requer operacoes com float
+    image = image.astype(np.float16) # difusao de erro requer operacoes com float
     output = image.copy() # difusao sera feita inplace no output
     flipped_kernel = np.fliplr(kernel)
     for r in range(nrows):
@@ -94,9 +94,9 @@ def meio_tom(image_name: str = "baboon_monocromatica.png", err_funct=distribute_
 
     for kernel_name, kernel in list(kernel_dict.items())[:1]:
         output = apply_error_diffusion(image, kernel, err_funct, trocar=True)
-        output2 = apply_error_diffusion(image, kernel, err_funct, trocar=False)
+        #output2 = apply_error_diffusion(image, kernel, err_funct, trocar=False)
         result_images[f"meio_tom_{kernel_name}_troca"] = output.astype(np.uint8)
-        result_images[f"meio_tom_{kernel_name}_sem"] = output2.astype(np.uint8)
+        #result_images[f"meio_tom_{kernel_name}_sem"] = output2.astype(np.uint8)
 
     return result_images
 
@@ -119,16 +119,19 @@ def main_comparison():
 
 def main_slice():
     print("distribute_error_slice")
-    res = meio_tom("wavefront_512.png", distribute_error_slice)
+    imgname = "fuji_cinza"
+    res = meio_tom(imgname + ".png", distribute_error_slice)
     for k in res.keys():
         print("Displaying", k)
+        cv.imshow("original", imread_auto(get_image_path(imgname + ".png")))
         cv.imshow(k, res[k])
+        cv.imwrite(f"experiments_results/{imgname}_{k}.png", res[k])
     cv.waitKey(0)
     cv.destroyAllWindows()
 
 def size_experiment():
-    gray_images = [f"noise_{i}.png" for i in [16, 32, 64, 128, 256, 512, 1024]]
-    rgb_images = [f"noise_{i}_RGB.png" for i in [16, 32, 64, 128, 256, 512, 1024]]
+    gray_images = [f"noise_{i}.png" for i in [16, 32, 64, 128, 256, 512, 1024, 2048]]
+    rgb_images = [f"noise_{i}_RGB.png" for i in [16, 32, 64, 128, 256, 512, 1024, 2048]]
     slice_gray_times = []
     slice_rgb_times = []
     for_gray_times = []
@@ -139,23 +142,23 @@ def size_experiment():
         start_time = time.time()
         res = meio_tom(image_name, distribute_error_slice)
         slice_gray_times.append(time.time() - start_time)
-        print(f"\nTime taken for {image_name}: {slice_gray_times[-1]} seconds")
+        print(f"\nTime taken on {image_name}: {slice_gray_times[-1]} seconds")
     for image_name in rgb_images:
         start_time = time.time()
         res = meio_tom(image_name, distribute_error_slice)
         slice_rgb_times.append(time.time() - start_time)
-        print(f"\nTime taken for {image_name}: {slice_rgb_times[-1]} seconds")
+        print(f"\nTime taken on {image_name}: {slice_rgb_times[-1]} seconds")
     print("\ndistribute_error_for")
     for image_name in gray_images:
         start_time = time.time()
         res = meio_tom(image_name, distribute_error_for)
         for_gray_times.append(time.time() - start_time)
-        print(f"\nTime taken for {image_name}: {for_gray_times[-1]} seconds")
+        print(f"\nTime taken on {image_name}: {for_gray_times[-1]} seconds")
     for image_name in rgb_images:
         start_time = time.time()
         res = meio_tom(image_name, distribute_error_for)
         for_rgb_times.append(time.time() - start_time)
-        print(f"\nTime taken for {image_name}: {for_rgb_times[-1]} seconds")
+        print(f"\nTime taken on {image_name}: {for_rgb_times[-1]} seconds")
     print()
     print("Slice gray total time:", sum(slice_gray_times))
     print("Slice RGB total time:", sum(slice_rgb_times))
