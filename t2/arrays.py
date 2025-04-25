@@ -46,7 +46,8 @@ array_lookup = {
     "burkes": BURKES,
     "sierra": SIERRA,
     "stucki": STUCKI,
-    "jarvis_judice_ninke": JARVIS_JUDICE_NINKE
+    "jarvis_judice_ninke": JARVIS_JUDICE_NINKE,
+    "custom": CUSTOM,
 }
 
 def get_array(array_name: str) -> np.ndarray:
