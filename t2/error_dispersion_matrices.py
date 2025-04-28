@@ -50,16 +50,7 @@ array_lookup = {
     "custom": CUSTOM,
 }
 
-def get_array(array_name: str) -> np.ndarray:
-    """
-    Retorna o array correspondente ao nome fornecido.
-    """
-    lowered = array_name.lower()
-    if lowered in array_lookup:
-        return np.array(array_lookup[lowered], dtype=np.float16)
-    raise ValueError(f"Unknown array name: {array_name}")
-
-def get_all_arrays() -> dict[str, np.ndarray]:
+def get_matrices() -> dict[str, np.ndarray]:
     """
     Retorna todos os arrays disponiveis.
     """

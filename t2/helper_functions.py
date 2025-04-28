@@ -60,7 +60,30 @@ def save_images(image_dict: dict[str, ndarray], exercise: int) -> None:
         filename = f"ex{str_ex}_{title}.png"
         cv.imwrite(os.path.join(ex_folder, filename), image, params)
 
-def display_images(image_dict: dict[str, ndarray]) -> bool:
+def display_images(image_dict: dict[str, ndarray], single: bool=False) -> bool:
+    """"
+    Exibe as imagens em uma janela, uma a uma, e aguarda que uma tecla seja pressionada.
+    As possibilidades sao 'n' para interromper o exercicio atual, 'q' para sair
+        e qualquer outra tecla para continuar.
+    Retorna False se o usuario pressionar 'n', True caso contrario.
+    """
+    for title, image in image_dict.items():
+        cv.imshow(title, image)
+        if single:
+            key = cv.waitKey(0)
+            if key == ord('q'):
+                print("\033[91mExecution interrupted by user (pressed 'q').\033[0m") # vermelho
+                exit()
+            cv.destroyAllWindows()
+    if not single:
+        key = cv.waitKey(0)
+        cv.destroyAllWindows()
+        if key == ord('q'):
+            print("\033[91mExecution interrupted by user (pressed 'q').\033[0m")
+            exit()
+    return True
+
+def display_images_subplots(image_dict: dict[str, ndarray], dim: tuple=None) -> bool:
     """
     Desenvolvido com auxílio de IA.
     Salva uma figura com subplots (2, n/2) de imagens usando matplotlib,
@@ -74,12 +97,13 @@ def display_images(image_dict: dict[str, ndarray]) -> bool:
         return True
 
     # Create matplotlib figure
-    fig, axes = plt.subplots(2, (n + 1) // 2, figsize=(10, 6))
+    if not dim:
+        dim = (2, (n + 1) // 2)
+    fig, axes = plt.subplots(dim[0], dim[1], figsize=(10, 6))
     axes = axes.flatten()
 
-    # Ensure "original" is processed first if it exists
     items = list(image_dict.items())
-    items.sort(key=lambda x: x[0] != "original")
+    items.sort(key=lambda x: x[0].lower() != "original")
 
     for ax, (title, img) in zip(axes, items):
         title = title.capitalize().replace('_', ' ')
@@ -95,7 +119,10 @@ def display_images(image_dict: dict[str, ndarray]) -> bool:
     for ax in axes[len(image_dict):]:
         ax.axis('off')
 
+    # Adjust layout to avoid overlapping
     plt.tight_layout()
+    #ax.set_aspect('auto')
+    plt.subplots_adjust(top=0.95, bottom=0.05, left=0.05, right=0.95, hspace=0.3, wspace=0.05)
 
     # Save to a temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmpfile:

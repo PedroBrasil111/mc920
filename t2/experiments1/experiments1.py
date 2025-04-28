@@ -3,7 +3,7 @@ matplotlib.use("Agg")  # Use non-GUI backend
 
 import argparse
 import cv2 as cv
-from arrays import get_array, get_all_arrays
+from t2.error_dispersion_matrices import get_matrix, get_matrices
 from helper_functions import *
 from exp_functions import *
 import numpy as np
@@ -119,7 +119,7 @@ def meio_tom(image_name: str = "baboon_monocromatica.png", err_funct=distribute_
     image = imread_auto(get_image_path(image_name)) # numero de canais baseado na imagem
     #image = cv.imread(get_image_path(image_name), cv.IMREAD_GRAYSCALE)
     result_images = {} # armazena as imagens resultantes
-    kernel_dict = get_all_arrays() # dicionario com as matrizes de distribuicao de erro
+    kernel_dict = get_matrices() # dicionario com as matrizes de distribuicao de erro
 
     for kernel_name, kernel in list(kernel_dict.items()):#[:1]:
         print("Processing", kernel_name)
@@ -149,7 +149,7 @@ def main_comparison():
 
 def main_slice():
     print("distribute_error_slice")
-    imgname = "fuji_cinza"
+    imgname = "degrade_radial"
     res = meio_tom(imgname + ".png", distribute_error_slice)
     for k in res.keys():
         print("Displaying", k)
@@ -160,8 +160,8 @@ def main_slice():
     cv.destroyAllWindows()
 
 def size_experiment():
-    gray_images = [f"noise_{i}.png" for i in [16, 32, 64, 128, 256, 512, 1024, 2048]]
-    rgb_images = [f"noise_{i}_RGB.png" for i in [16, 32, 64, 128, 256, 512, 1024, 2048]]
+    gray_images = [f"noise_{i}.png" for i in [1024]]
+    rgb_images = [f"noise_{i}_RGB.png" for i in [1024]]
     slice_gray_times = []
     slice_rgb_times = []
     for_gray_times = []
@@ -198,7 +198,7 @@ def size_experiment():
     return slice_gray_times, slice_rgb_times
 
 def results_quality_comparison():
-    imgnames = ["fuji_cinza", "monalisa", "degrade_radial", "fuji"]
+    imgnames = ["fuji_cinza", "fuji"]
     metrics_all = {}
     for imgname in imgnames:
         img = imread_auto(get_image_path(imgname + ".png"))
@@ -224,7 +224,7 @@ def results_quality_comparison():
         print("Metrics saved to", f"experiments_results/{imgname}/metrics.txt")
         print()           
         metrics_all[imgname] = metrics_img
-    with open("experiments_results/metrics_all5.csv", "w") as f:
+    with open("experiments_results/metrics_all6.csv", "w") as f:
         f.write("Imagem,Matriz,RMSE,PSNR,Correlacao\n")
         for imgname, metrics_img in metrics_all.items():
             for k, metrics in metrics_img.items():

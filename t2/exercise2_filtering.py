@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from helper_functions import (
-    imread_auto, get_image_path, save_images, display_images
+    imread_auto, get_image_path, save_images, display_images_subplots
 )
 import numpy as np
 import os
@@ -123,7 +123,7 @@ def get_magnitude_image(frequency_image: np.ndarray) -> np.ndarray:
     O espectro de magnitude eh normalizado para o intervalo [0, 255].
     """
     result = np.clip(20*np.log(np.abs(frequency_image),
-                     where=(frequency_image!=0)),
+                     where=(np.abs(frequency_image)>0)),
                      0, 255
                     )
     return result
@@ -144,6 +144,8 @@ def handle_args(args):
                 raise ValueError(f"Invalid filter mode: {filter_mode}")
     else:
         args.mode = FILTER_MODES
+    if args.cutoff - args.width < 0:
+        raise ValueError("Width must be less than cutoff frequency for bandpass and bandstop filters.")
     if args.cutoff <= 0:
         raise ValueError("Cutoff frequency must be greater than 0.")
     if args.width <= 0:
@@ -177,7 +179,7 @@ def handle_results(
             save_images(filter_type_results, exercise=2)
         # Mostra os resultados e a imagem original
         filter_type_results["original"] = image
-        if display and not display_images(filter_type_results):
+        if display and not display_images_subplots(filter_type_results):
             break # exibe imgs e interrompe o loop se o usuario pressionar 'q'
 
 def run(args):
@@ -188,7 +190,7 @@ def run(args):
     c, w, n = args.cutoff, args.width, args.order
 
     transformed = np.fft.fft2(image) # aplica a fft
-    fshift = np.fft.fftshift(transformed, axes=(0, 1)) # centraliza o espectro
+    fft_img = np.fft.fftshift(transformed, axes=(0, 1)) # centraliza o espectro
 
     # Itera sobre os tipos de filtro e modos de filtragem
     for filter_mode in args.mode:
@@ -197,7 +199,7 @@ def run(args):
 
         for filter_type in args.type:
             filtered_image, filtered_freq = apply_frequency_filter(
-                fshift, filter_type, filter_mode,
+                fft_img, filter_type, filter_mode,
                 c, w, n
             )
             results[filter_mode][filter_type] = filtered_image.astype(np.uint8)
@@ -218,7 +220,7 @@ def run(args):
     if args.display:
         # pressionar 'n' tambem skipa essa parte, mas nao eh um grande problema
         print("\033[93mDisplaying magnitude images. Press 'q' to exit and any other key to display the next one.\033[0m")
-    handle_results(get_magnitude_image(fshift).astype(np.uint8)
+    handle_results(get_magnitude_image(fft_img).astype(np.uint8)
                    , freq_results, False, args.display, prefix="spectrum")
 
     print("\033[92mDone.\033[0m") # verde 
@@ -227,9 +229,9 @@ if __name__ == "__main__":
     args = ArgumentParser()
     args.add_argument("-i", "--image", type=str, default="baboon_monocromatica.png", help="Image name (with extension) - default: baboon_monocromatica.png")
     args.add_argument("-t", "--type", nargs="+", type=str, help="List of filter types (ideal, butterworth, gaussian) - default: all")
-    args.add_argument("-m", "--mode", nargs="+", type=str, help="List of filter modes (low, high, bandpass, bandstop) - default: all")
-    args.add_argument("-c", "--cutoff", type=int, default=50, help="Cutoff frequency - default: 50")
-    args.add_argument("-w", "--width", type=int, default=10, help="Width of the filter (only for bandpass and bandstop) - default: 10")
+    args.add_argument("-m", "--mode", nargs="+", type=str, help="List of filter modes (lowpass, highpass, bandpass, bandstop) - default: all")
+    args.add_argument("-c", "--cutoff", type=float, default=50, help="Cutoff frequency - default: 50")
+    args.add_argument("-w", "--width", type=float, default=10, help="Width of the filter (only for bandpass and bandstop) - default: 10")
     args.add_argument("-o", "--order", type=int, default=2, help="Order of the filter (only for butterworth) - default: 2")
     args.add_argument("-s", "--save", action="store_true", help="Save the images")
     args.add_argument("-d", "--display", action="store_true", help="Display the images")
