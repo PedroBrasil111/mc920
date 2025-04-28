@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
+import cv2 as cv
 from helper_functions import (
-    imread_auto, get_image_path, save_images, display_images_subplots
+    imread_auto, get_image_path, save_images, display_images
 )
 import numpy as np
 import os
@@ -107,12 +108,13 @@ def apply_frequency_filter(
         frequency_image.shape, filter_type, filter_mode,
         cutoff, width, order
     )
-    filtered_freq = frequency_image * kernel
+    filtered_freq = frequency_image.astype(np.complex64) * kernel.astype(np.complex64)
     # Obtem a imagem filtrada a partir da transformada inversa
     filtered_image = np.abs(np.fft.ifft2(
         np.fft.ifftshift(filtered_freq, axes=axes),
         axes=axes
     ))
+    np.clip(filtered_image, 0, 255, out=filtered_image) # limita a [0, 255]
     return filtered_image, filtered_freq
 
 def get_magnitude_image(frequency_image: np.ndarray) -> np.ndarray:
@@ -179,11 +181,12 @@ def handle_results(
             save_images(filter_type_results, exercise=2)
         # Mostra os resultados e a imagem original
         filter_type_results["original"] = image
-        if display and not display_images_subplots(filter_type_results):
-            break # exibe imgs e interrompe o loop se o usuario pressionar 'q'
+        if display and not display_images(filter_type_results, single=False):
+            # interrompe o loop se o usuario pressionar 'n'
+            break
 
 def run(args):
-    image = imread_auto(get_image_path(args.image))
+    image = cv.imread(get_image_path(args.image), cv.IMREAD_GRAYSCALE) # le imagem
 
     results = {} # resultados no dominio espacial
     freq_results = {} # resultados no dominio da frequencia (apenas magnitude)
@@ -213,15 +216,17 @@ def run(args):
         print("\033[93mDisplaying filtered images. Press 'q' to exit, 'n' to start displaying the magnitude images and any other key to display the next one.\033[0m")
     handle_results(image, results,
                    args.save, args.display, prefix="filtro")
-    # Salva os resultados
-    if args.save:
-        print("\033[92mImages saved successfully.\033[0m") # verde 
+
     # Exibe espectros filtrados
     if args.display:
         # pressionar 'n' tambem skipa essa parte, mas nao eh um grande problema
         print("\033[93mDisplaying magnitude images. Press 'q' to exit and any other key to display the next one.\033[0m")
     handle_results(get_magnitude_image(fft_img).astype(np.uint8)
-                   , freq_results, False, args.display, prefix="spectrum")
+                   , freq_results, args.save, args.display, prefix="spectrum")
+
+    # Salva os resultados
+    if args.save:
+        print("\033[92mImages saved successfully.\033[0m") # verde 
 
     print("\033[92mDone.\033[0m") # verde
 

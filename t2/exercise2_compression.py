@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 import cv2 as cv
 from helper_functions import (
-    imread_auto, get_image_path, save_images, display_images_subplots
+    imread_auto, get_image_path, save_images, display_images_subplots, display_images
 )
 import matplotlib.pyplot as plt
 import numpy as np
@@ -78,12 +78,12 @@ def handle_results(
             "histograma_comprimido": calc_histogram(compressed)
         }
         print("\033[93mDisplaying results. Press 'q' to exit.\033[0m")
-        return display_images_subplots(results, (2, 2))
+        return display_images(results, single=False)
     return True
 
 def run(args):
     # Le imagem e aplica compressao
-    image = imread_auto(get_image_path(args.image))
+    image = cv.imread(get_image_path(args.image), cv.IMREAD_GRAYSCALE) # le imagem
     compressed_image = apply_compression(image, args.percentile)
 
     # Lida com o resultado
