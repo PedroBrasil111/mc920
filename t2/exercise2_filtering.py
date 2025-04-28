@@ -212,7 +212,7 @@ def run(args):
     if args.display:
         print("\033[93mDisplaying filtered images. Press 'q' to exit, 'n' to start displaying the magnitude images and any other key to display the next one.\033[0m")
     handle_results(image, results,
-                   args.save, args.display, prefix="filtered")
+                   args.save, args.display, prefix="filtro")
     # Salva os resultados
     if args.save:
         print("\033[92mImages saved successfully.\033[0m") # verde 
@@ -223,7 +223,7 @@ def run(args):
     handle_results(get_magnitude_image(fft_img).astype(np.uint8)
                    , freq_results, False, args.display, prefix="spectrum")
 
-    print("\033[92mDone.\033[0m") # verde 
+    print("\033[92mDone.\033[0m") # verde
 
 if __name__ == "__main__":
     args = ArgumentParser()
@@ -231,8 +231,8 @@ if __name__ == "__main__":
     args.add_argument("-t", "--type", nargs="+", type=str, help="List of filter types (ideal, butterworth, gaussian) - default: all")
     args.add_argument("-m", "--mode", nargs="+", type=str, help="List of filter modes (lowpass, highpass, bandpass, bandstop) - default: all")
     args.add_argument("-c", "--cutoff", type=float, default=50, help="Cutoff frequency - default: 50")
-    args.add_argument("-w", "--width", type=float, default=10, help="Width of the filter (only for bandpass and bandstop) - default: 10")
-    args.add_argument("-o", "--order", type=int, default=2, help="Order of the filter (only for butterworth) - default: 2")
+    args.add_argument("-w", "--width", type=float, default=10, help="Width of the filter (only applies to bandpass and bandstop modes) - default: 10")
+    args.add_argument("-o", "--order", type=int, default=2, help="Order of the filter (only applies to butterworth type) - default: 2")
     args.add_argument("-s", "--save", action="store_true", help="Save the images")
     args.add_argument("-d", "--display", action="store_true", help="Display the images")
     args = args.parse_args()
