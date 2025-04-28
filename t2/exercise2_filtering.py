@@ -125,7 +125,7 @@ def get_magnitude_image(frequency_image: np.ndarray) -> np.ndarray:
     O espectro de magnitude eh normalizado para o intervalo [0, 255].
     """
     result = np.clip(20*np.log(np.abs(frequency_image),
-                     where=(np.abs(frequency_image)>0)),
+                     where=(np.abs(frequency_image)>0)), # log(0) indefinido
                      0, 255
                     )
     return result
@@ -146,8 +146,8 @@ def handle_args(args):
                 raise ValueError(f"Invalid filter mode: {filter_mode}")
     else:
         args.mode = FILTER_MODES
-    if args.cutoff - args.width < 0:
-        raise ValueError("Width must be less than cutoff frequency for bandpass and bandstop filters.")
+    if args.cutoff - args.width / 2 < 0:
+        raise ValueError("Width must be less than half the cutoff frequency for bandpass and bandstop filters.")
     if args.cutoff <= 0:
         raise ValueError("Cutoff frequency must be greater than 0.")
     if args.width <= 0:
