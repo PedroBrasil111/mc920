@@ -1,7 +1,10 @@
+import matplotlib
+matplotlib.use('Agg') # Fix para erro de backend do matplotlib
+
 from argparse import ArgumentParser
 import cv2 as cv
 from helper_functions import (
-    imread_auto, get_image_path, save_images, display_images_subplots, display_images
+    get_image_path, save_images, display_images
 )
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,10 +42,10 @@ def handle_args(args):
     if not args.save and not args.display:
         raise ValueError("No action specified. Use -s to save images and/or -d to display them.")
 
-def apply_compression(image: np.ndarray, percentile: float) -> np.ndarray:
+def apply_compression(image: np.ndarray, percentile: float) -> tuple[np.ndarray]:
     """
     Aplica a compressao na imagem usando a FFT e o percentil especificado.
-    Retorna a imagem comprimida.
+    Retorna a imagem comprimida e a seu espectro de Fourier de magnitude.
     """
     transformed = np.fft.fft2(image)  # aplica a fft
     fft_img = np.fft.fftshift(transformed, axes=(0, 1))  # centraliza o espectro
@@ -55,28 +58,28 @@ def apply_compression(image: np.ndarray, percentile: float) -> np.ndarray:
     compressed_image = np.abs(
         np.fft.ifft2(np.fft.ifftshift(thresholded, axes=(0, 1)))  # aplica a fft inversa
     ).astype(np.uint8)
+    # calcula o espectro de Fourier de magnitude
+    frequency_compression = np.clip(20*np.log(np.abs(thresholded),
+                                    where=(np.abs(thresholded)>0)),
+                                    0, 255
+                                ).astype(np.uint8)
 
-    return compressed_image
+    return compressed_image, frequency_compression
 
 def handle_results(
         original: np.ndarray,
-        compressed: np.ndarray,
+        results: dict[str, np.ndarray],
         save: bool,
-        display: bool,
+        display: bool
     ) -> bool:
     """
     Lida com o resultado da funcao de compressao.
     Salva e/ou exibe as imagens resultantes.
     """
     if save:
-        save_images({"comprimido": compressed}, exercise=2)
+        save_images(results, exercise="02_compression")
     if display:
-        results = {
-            "original": original,
-            "comprimido": compressed,
-            "histograma": calc_histogram(original),
-            "histograma_comprimido": calc_histogram(compressed)
-        }
+        results["original"] = original
         print("\033[93mDisplaying results. Press 'q' to exit.\033[0m")
         return display_images(results, single=False)
     return True
@@ -84,15 +87,20 @@ def handle_results(
 def run(args):
     # Le imagem e aplica compressao
     image = cv.imread(get_image_path(args.image), cv.IMREAD_GRAYSCALE) # le imagem
-    compressed_image = apply_compression(image, args.percentile)
+    compressed_image, frequency_compressed = apply_compression(image, args.percentile)
 
     # Lida com o resultado
     print("\033[92mProcessing completed successfully.\033[0m") # verde
+    results = {
+        "comprimido": compressed_image,
+        "espectro_comprimido": frequency_compressed,
+        "histograma_comprimido": calc_histogram(compressed_image)
+    }
     handle_results(
-        original=image,
-        compressed=compressed_image,
-        save=args.save,
-        display=args.display
+        image,
+        results,
+        args.save,
+        args.display
     )
     print("\033[92mDone.\033[0m") # verde 
 

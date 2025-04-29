@@ -6,7 +6,7 @@ from helper_functions import (
 import numpy as np
 import os
 
-# carrega todas as matrizes de distribuicao de erro
+# Carrega todas as matrizes de distribuicao de erro
 ERROR_DIFF_MATRICES = get_matrices()
 
 def spread_error(
@@ -103,6 +103,8 @@ def handle_args(args) -> None:
     if args.image:
         if not os.path.exists(get_image_path(args.image)):
             raise ValueError(f"Image {args.image} not found.")
+    else:
+        args.image = "baboon_monocromatica.png"
     if args.matrix:
         for matrix_name in args.matrix:
             if matrix_name.lower() not in ERROR_DIFF_MATRICES:

@@ -1,11 +1,6 @@
-import matplotlib
-matplotlib.use('Agg') # fix por causa de erro de backend
-
 import cv2 as cv
-import matplotlib.pyplot as plt
 from numpy import ndarray
 import os
-import tempfile
 
 # Diretorios devem estar no mesmo nivel do arquivo
 IMAGE_FOLDER  = os.path.join(os.path.dirname(__file__), 'images')
@@ -43,7 +38,7 @@ def imread_auto(image_path: str) -> ndarray:
         return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     return image
 
-def save_images(image_dict: dict[str, ndarray], exercise: int) -> None:
+def save_images(image_dict: dict[str, ndarray], exercise: int | str) -> None:
     """
     Salva as imagens do dicionario image_dict no diretorio RESULT_FOLDER.
     O nome do arquivo eh composto pelo numero do exercicio e o titulo da imagem.

@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 import cv2 as cv
 from helper_functions import (
-    imread_auto, get_image_path, save_images, display_images
+    get_image_path, save_images, display_images
 )
 import numpy as np
 import os
@@ -178,7 +178,7 @@ def handle_results(
         }
         # Salva os resultados
         if save:
-            save_images(filter_type_results, exercise=2)
+            save_images(filter_type_results, exercise="02_filtering")
         # Mostra os resultados e a imagem original
         filter_type_results["original"] = image
         if display and not display_images(filter_type_results, single=False):
