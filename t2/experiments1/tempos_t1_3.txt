@@ -1,0 +1,73 @@
+distribute_error_slice
+
+Time taken on noise_16.png: 0.0019345283508300781 seconds
+
+Time taken on noise_32.png: 0.006715297698974609 seconds
+
+Time taken on noise_64.png: 0.027672767639160156 seconds
+
+Time taken on noise_128.png: 0.11417722702026367 seconds
+
+Time taken on noise_256.png: 0.44937944412231445 seconds
+
+Time taken on noise_512.png: 1.836487054824829 seconds
+
+Time taken on noise_1024.png: 7.2225587368011475 seconds
+
+Time taken on noise_2048.png: 30.445420503616333 seconds
+
+Time taken on noise_16_RGB.png: 0.0059359073638916016 seconds
+
+Time taken on noise_32_RGB.png: 0.00966644287109375 seconds
+
+Time taken on noise_64_RGB.png: 0.03810572624206543 seconds
+
+Time taken on noise_128_RGB.png: 0.15224599838256836 seconds
+
+Time taken on noise_256_RGB.png: 0.6346335411071777 seconds
+
+Time taken on noise_512_RGB.png: 2.4014289379119873 seconds
+
+Time taken on noise_1024_RGB.png: 8.973330020904541 seconds
+
+Time taken on noise_2048_RGB.png: 35.413654088974 seconds
+
+distribute_error_for
+
+Time taken on noise_16.png: 0.0017704963684082031 seconds
+
+Time taken on noise_32.png: 0.007059335708618164 seconds
+
+Time taken on noise_64.png: 0.02732992172241211 seconds
+
+Time taken on noise_128.png: 0.11116981506347656 seconds
+
+Time taken on noise_256.png: 0.4410264492034912 seconds
+
+Time taken on noise_512.png: 1.8356962203979492 seconds
+
+Time taken on noise_1024.png: 7.426234483718872 seconds
+
+Time taken on noise_2048.png: 28.675028562545776 seconds
+
+Time taken on noise_16_RGB.png: 0.0035555362701416016 seconds
+
+Time taken on noise_32_RGB.png: 0.014239788055419922 seconds
+
+Time taken on noise_64_RGB.png: 0.057440757751464844 seconds
+
+Time taken on noise_128_RGB.png: 0.2310194969177246 seconds
+
+Time taken on noise_256_RGB.png: 0.9271140098571777 seconds
+
+Time taken on noise_512_RGB.png: 3.7648420333862305 seconds
+
+Time taken on noise_1024_RGB.png: 15.127434968948364 seconds
+
+Time taken on noise_2048_RGB.png: 60.76893067359924 seconds
+
+Slice gray total time: 40.10434556007385
+Slice RGB total time: 47.629000663757324
+
+For gray total time: 38.525315284729004
+For RGB total time: 80.89457726478577
