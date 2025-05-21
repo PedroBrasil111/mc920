@@ -178,4 +178,4 @@ Angle: 86.00 - Objective Value: 9079.93
 Angle: 87.00 - Objective Value: 8904.83
 Angle: 88.00 - Objective Value: 10458.05
 Angle: 89.00 - Objective Value: 11255.45
-Angle: 90.00 - Objective Value: 7335.22
+Angle: 90.00 - Objective Value: 17825.21

@@ -1,0 +1,7 @@
+partitura.png - 0.17
+neg_28.png - 0.57
+pos_41.png - 0.66
+sample1.png - 0.15
+sample2.png - 1.52
+neg_4.png - 0.57
+pos_24.png - 0.49

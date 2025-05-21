@@ -3,7 +3,7 @@ import os
 
 # Path to data directory
 data_dir = "experiments/horizontal_obj/"
-filenames = sorted(f for f in os.listdir(data_dir) if f.endswith(".txt"))
+filenames = sorted(f for f in os.listdir(data_dir) if f.endswith(".txt") and not f.startswith("times"))
 
 # Set up the plot
 plt.figure(figsize=(12, 6))
@@ -27,6 +27,10 @@ for file in filenames:
             values.append(value)
         except (IndexError, ValueError):
             print(f"Skipping malformed line: {line}")
+
+    zipped = list(zip(angles, values))
+    zipped.sort(key=lambda x: x[0])
+    angles, values = zip(*zipped)
 
     best = max(values)
     best_index = values.index(best)
