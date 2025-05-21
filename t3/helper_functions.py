@@ -37,7 +37,7 @@ def save_images(image_dict: dict[str, ndarray], exercise: int | str) -> None:
 
     params = [cv.IMWRITE_PNG_STRATEGY, cv.IMWRITE_PNG_STRATEGY_DEFAULT]
     for title, image in image_dict.items():
-        filename = f"ex{str_ex}_{title}.png"
+        filename = f"{title}.png"
         cv.imwrite(os.path.join(ex_folder, filename), image, params)
 
 def display_images(image_dict: dict[str, ndarray], single: bool=False) -> bool:

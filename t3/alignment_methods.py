@@ -40,9 +40,9 @@ def hor_profile(img):
 def profile_objective_function(perfil: np.ndarray) -> float:
     """
     Retorna o valor da funcao objetivo para o perfil `perfil`.
-    Calculado como o MSD
+    Calculado de forma similar ao RMSE entre valores adjacentes.
     """
-    return np.sum(np.square(np.diff(perfil)))
+    return np.sqrt(np.sum(np.square(np.diff(perfil))))
 
 def horizontal_projection_align(img: np.ndarray) -> np.ndarray:
     """
@@ -50,28 +50,17 @@ def horizontal_projection_align(img: np.ndarray) -> np.ndarray:
     """
     best_angle = None
     best_objective_val = -1
-
-    import os
-    i = 0
-    files = os.listdir("experiments/horizontal_obj/")
-    for filename in files:
-        if filename.endswith(".txt"):
-            _i = int(filename.split(".")[0]) + 1
-            if _i > i:
-                i = _i
     
-    with open(f"experiments/horizontal_obj/{i}.txt", "w+") as f:
-        for angle in np.arange(-90, 91, 1):
-            # Rotaciona a imagem e calcula a funcao objetivo
-            rotated = rotate_image(img, angle)
-            rotated_profile = hor_profile(rotated)
-            objective_val = profile_objective_function(rotated_profile)
+    for angle in np.arange(-90, 91, 1):
+        # Rotaciona a imagem e calcula a funcao objetivo
+        rotated = rotate_image(img, angle)
+        rotated_profile = hor_profile(rotated)
+        objective_val = profile_objective_function(rotated_profile)
 
-            # Atualiza o melhor angulo se necessario
-            f.write(f"Angle: {angle:.2f} - Objective Value: {objective_val:.2f}\n")
-            if objective_val > best_objective_val:
-                best_objective_val = objective_val
-                best_angle = angle
+        # Atualiza o melhor angulo se necessario
+        if objective_val > best_objective_val:
+            best_objective_val = objective_val
+            best_angle = angle
 
     return best_angle
 
