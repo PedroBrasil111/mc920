@@ -9,7 +9,6 @@ from helper_functions import (
 )
 from alignment import (
     rotate_image, run_angle_detection,
-    add_histogram
 )
 
 def handle_args(args):
@@ -47,7 +46,7 @@ def handle_results(
         print("\033[92mResults saved\033[0m")
     if display:
         print("\033[93mDisplaying results. Press 'q' to exit or 'n' to go to the next mode (if there is one).\033[0m")
-        return display_images(results, single=False)
+        return display_images(results, single=True)
     return True
 
 def run(args) -> None:
@@ -57,11 +56,12 @@ def run(args) -> None:
         results = {}
         # Le imagem, processa e guarda resultado
         for img_name in args.image:
+            str_img = img_name.split(".")[0]
             img = cv.imread(get_image_path(img_name), cv.IMREAD_GRAYSCALE)
             angle = run_angle_detection(img, mode)
-            rotated = rotate_image(img, angle)
-            print(f"- Image {img_name} was rotated by {angle:.2f} degrees")
-            results[f"aligned_{img_name}"] = rotated
+            rotated = rotate_image(img, angle, remove_border=True)
+            print(f"- Image {str_img} was rotated by {angle:.2f} degrees")
+            results[f"aligned_{str_img}"] = rotated
         handle_results(results, mode, args.save, args.display)
     print("\033[92mDone.\033[0m") # verde
 

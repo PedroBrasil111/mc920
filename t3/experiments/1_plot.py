@@ -4,6 +4,7 @@ import os
 # Path to data directory
 data_dir = "experiments/horizontal_obj/"
 filenames = sorted(f for f in os.listdir(data_dir) if f.endswith(".txt") and not f.startswith("times"))
+#filenames = [f for f in filenames if f.startswith("pos_") or f.startswith("neg_") or f.startswith("sample") or f.startswith("partitura")]
 
 # Set up the plot
 plt.figure(figsize=(12, 6))
@@ -39,7 +40,9 @@ for file in filenames:
     # Mark the best point
     plt.plot(angles, values, linestyle='-', label=file[:-4] + ".png")
     plt.plot(best_angle, best, marker='o', color='black', markersize=6)
+    #plt.plot(17, values[angles.index(17)], marker='o', color='black', markersize=6)
     plt.annotate(f"{best_angle:.1f}°", (best_angle, best), textcoords="offset points", xytext=(5,5), ha='left', fontsize=12, color='black')
+    #plt.annotate(f"{17:.1f}°", (17, values[angles.index(17)]), textcoords="offset points", xytext=(5,5), ha='left', fontsize=12, color='black')
 
 
 # Finalize plot
@@ -53,3 +56,12 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 #plt.savefig("experiments/horizontal_obj/plot.png", dpi=450)
+
+
+"""
+
+0 -1 1 -2 2 || -3 3
+Window = 2
+
+
+"""

@@ -3,20 +3,21 @@ import numpy as np
 
 ### Funcoes para tecnica de projecao horizontal
 
-def hor_profile(img):
+def _horizontal_projection(img):
     """
-    Retorna o perfil horizontal da imagem `img`.
+    Retorna a projecao horizontal da imagem `img`.
     """
     return np.sum(255 - img, axis=1)
 
-def profile_objective_function(perfil: np.ndarray) -> float:
+def _projection_objective_function(img: np.ndarray) -> float:
     """
-    Retorna o valor da funcao objetivo para o perfil `perfil`.
-    Calculado como o RMSE, onde o erro eh a diferenca de intensidade entre pontos adjacentes.
-    """
-    return np.sqrt(np.sum(np.square(np.diff(perfil))))
+    Retorna o valor da funcao objetivo para a projecao `projection`.
+    Calculado como o MSE, onde o erro eh a diferenca de intensidade entre pontos adjacentes.
+    """ 
+    projection = _horizontal_projection(img)
+    return np.sum(np.square(np.diff(projection))) / (img.shape[0] * img.shape[1])
 
-def interleaved_value_range(max_val: float, step: float=1) -> np.ndarray:
+def _interleaved_value_range(max_val: float, step: float=1) -> np.ndarray:
     """
     Retorna um array de valores intercalados entre -max_val e max_val, com passo `step`.
     """
@@ -27,26 +28,39 @@ def interleaved_value_range(max_val: float, step: float=1) -> np.ndarray:
     interleaved[1::2] = -val_range
     return interleaved
 
+WINDOW = 5
+RATIO = 0.1
+
 def detect_rotation_angle_projection(img: np.ndarray) -> np.ndarray:
     """
     Retorna o melhor angulo de rotacao da imagem `img`
     """
     # Inicializacao de variaveis
     best_angle = None
+    best_objective_val = -1
     vals = []
 
     # Rotaciona a imagem para cada angulo e calcula a funcao objetivo
-    for angle in interleaved_value_range(90):
-        rotated = rotate_image(img, angle)
-        rotated_profile = hor_profile(rotated)
-        objective_val = profile_objective_function(rotated_profile)
+    for angle in _interleaved_value_range(90):
+        rotated = rotate_image(img, angle, remove_border=True)
+        objective_val = _projection_objective_function(rotated)
+        vals.append(objective_val)
 
-        # Atualiza informacoes se a funcao objetivo aumentar
-        if not vals or objective_val > vals[-1]:
+        # Atualiza o melhor angulo se necessario
+        if objective_val > best_objective_val:
             best_angle = angle
-            vals.append(objective_val)
-            # Early stopping se a funcao objetivo for suficientemente grande
-            if np.average(vals[-10:]) < vals[-1]/2:
+            best_objective_val = objective_val
+
+        # Early stopping se a funcao objetivo nao melhorar
+        if best_angle * angle >= 0 and len(vals) > 2 * WINDOW:
+            recent = vals[-2*WINDOW + 1::2] # Apenas angulos com mesmo sinal
+            if np.mean(recent) < RATIO * best_objective_val:
+                # Ultimo teste: angulo complementar oposto (rotacao de 90 graus)
+                last_test = best_angle - 90 if best_angle > 0 else best_angle + 90
+                rotated = rotate_image(img, last_test, remove_border=True)
+                objective_val = _projection_objective_function(rotated)
+                if objective_val > best_objective_val:
+                    best_angle = last_test
                 break
 
     return best_angle
@@ -58,17 +72,10 @@ def detect_rotation_angle_hough(img: np.ndarray) -> float:
     Retorna o melhor angulo de rotacao da imagem `img` entre -90 e 90 graus.
     """
     # Aplica o operador de Canny
-    edges = cv.Canny(cv.normalize(img, None, 0, 255, cv.NORM_MINMAX), 255/3, 255)
+    edges = cv.Canny(cv.normalize(img, None, 0, 255, cv.NORM_MINMAX), 255//3, 255)
 
     # Aplica a transformada de Hough com rho de 0 a 180 graus
     lines = cv.HoughLinesWithAccumulator(edges, 1, np.pi/180, 1, min_theta=0, max_theta=np.pi)
-
-    # Media baseada no percentil
-    # accum_percentile = np.percentile(lines[:, :, 2], 99.99)
-    # angle = np.mean(lines[lines[:, :, 2] >= accum_percentile][:, 1]) * 180 / np.pi
-
-    # Media ponderada
-    # angle = np.sum(lines[:, :, 1] * lines[:, :, 2]) / np.sum(lines[:, :, 2]) * 180 / np.pi
 
     # Angulo com maior acumulador
     max_accum = np.max(lines[:, :, 2])
@@ -143,7 +150,7 @@ def add_histogram(img: np.ndarray) -> np.ndarray:
     """
     Retorna uma imagem com o histograma do perfil horizontal da imagem `img` adicionado a direita.
     """
-    profile = hor_profile(img)
+    profile = _horizontal_projection(img)
     h, w = img.shape[:2]
     min_val, max_val = 0, np.max(profile)
 

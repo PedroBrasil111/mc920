@@ -1,0 +1,8 @@
+Sequencial early stopping
+partitura.png - 1.16s - 26 deg
+neg_28.png - 0.56s - -28 deg
+pos_41.png - 0.62s - 40 deg
+sample1.png - 0.07s - 14 deg
+sample2.png - 1.00s - -89 deg
+neg_4.png - 0.32s - -90 deg
+pos_24.png - 1.22s - 23 deg

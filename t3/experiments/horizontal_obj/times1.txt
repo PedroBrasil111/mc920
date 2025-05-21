@@ -1,0 +1,8 @@
+Sequencial ingenua
+partitura.png - 1.58s - 26 deg
+neg_28.png - 1.40s - -28 deg
+pos_41.png - 1.43s - 41 deg
+sample1.png - 0.36s - 14 deg
+sample2.png - 7.30s - -6 deg
+neg_4.png - 1.14s - -4 deg
+pos_24.png - 1.31s - 24 deg
