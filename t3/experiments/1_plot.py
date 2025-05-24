@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')  # Use this before importing pyplot
 import matplotlib.pyplot as plt
 import os
 
@@ -54,14 +56,5 @@ plt.ylabel("Valor da Função Objetivo", fontsize=14)
 plt.grid(True, linestyle='--', linewidth=0.5, color='gray')
 plt.legend()
 plt.tight_layout()
-plt.show()
-#plt.savefig("experiments/horizontal_obj/plot.png", dpi=450)
-
-
-"""
-
-0 -1 1 -2 2 || -3 3
-Window = 2
-
-
-"""
+#plt.show()
+plt.savefig("experiments/horizontal_obj/plot.png", dpi=450)
