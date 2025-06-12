@@ -5,21 +5,31 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 
-def calc_histogram(areas: np.ndarray) -> np.ndarray:
-    """
-    Plots a histogram of object areas using fixed bins.
-    Returns it as an OpenCV RGB image.
-    """
-    areas = np.asarray(areas)
-    bin_edges = [np.min(areas), 1500, 3000, np.max(areas) + 1]
+#rgb_img = cv.imread('images/ellipse.png')
+rgb_img = cv.imread('images/objetos3.png')
 
-    # Desenha o histograma
+def area_histogram(areas: np.ndarray) -> tuple[list[int], np.ndarray]:
+    """
+    Retorna a imagem do histograma de areas dos objetos.
+    """
+    # Define os bins
+    mi, ma = np.min(areas), np.max(areas)
+    bin_edges = [mi if mi < 1500 else 0, 1500, 3000, ma if ma > 3000 else 4500]
+
+    # Calcula e desenha o histograma
     fig, ax = plt.subplots(figsize=(5, 4))
-    ax.hist(areas, bins=bin_edges, color="blue", edgecolor="black")
+    hist = ax.hist(areas, bins=bin_edges, color="blue", edgecolor="black")
     ax.set_xlabel("Área")
     ax.set_ylabel("Número de Objetos")
-    ax.set_xlim(0, np.max(areas) + 500)
-    ax.set_xticks(range(0, np.max(areas) + 500, 500))
+    ax.set_xlim(0, 4500)
+    xticklabels = [str(x) for x in bin_edges]
+
+    # Adiciona "..." se limite do ultimo bin for maior que 4500
+    if ma > 4500:
+        bin_edges = bin_edges[:-1] + [7500/2, 4500]
+        xticklabels = xticklabels[:-1] + ["...", str(ma)]
+    ax.set_xticks(bin_edges)
+    ax.set_xticklabels(xticklabels)
 
     # Converte para imagem
     fig.canvas.draw()
@@ -28,26 +38,22 @@ def calc_histogram(areas: np.ndarray) -> np.ndarray:
     img = cv.cvtColor(buf, cv.COLOR_RGBA2BGR)
     plt.close(fig)
 
-    return img
+    return [int(val) for val in hist[0]], img
 
-#rgb_img = cv.imread('images/ellipse.png')
-rgb_img = cv.imread('images/objetos3.png')
+def build_mask(img):
+    # Em mask, fundo tem valor 1 e objetos 0
+    # A imagem binaria bin_img tem fundo branco (255) e objetos pretos (0)
+    mask = np.all(rgb_img == 255, axis=2).astype(np.uint8)
+    return mask
 
-# Em mask, fundo tem valor 1 e objetos 0
-# A imagem binaria bin_img tem fundo branco (255) e objetos pretos (0)
-mask = np.all(rgb_img == 255, axis=2).astype(np.uint8)
-bin_img = 255 * mask
-
-# Calcula bordas (vizinhanca-4)
-neighbor_kernel = np.array([[0, 1, 0],
-                            [1, 0, 1],
-                            [0, 1, 0]], dtype=np.uint8)
-neighbor_count = cv.filter2D(mask, -1, neighbor_kernel)
-bin_border = np.where((mask == 1) & (neighbor_count < 4), 0, 1).astype(np.uint8)
-border_img = bin_border * 255
-
-# Encontra componentes
-num_labels, labels = cv.connectedComponents(bin_border, connectivity=4)
+def borders(mask):
+    # Calcula bordas (vizinhanca-4)
+    neighbor_kernel = np.array([[0, 1, 0],
+                                [1, 0, 1],
+                                [0, 1, 0]], dtype=np.uint8)
+    neighbor_count = cv.filter2D(mask, -1, neighbor_kernel, borderType=cv.BORDER_REPLICATE)
+    bin_border = np.where((mask == 1) & (neighbor_count < 4), 0, 1).astype(np.uint8)
+    return bin_border
 
 def find_contour(label_mask, label):
     component_mask = (label_mask == label).astype(np.uint8)
@@ -66,14 +72,13 @@ def find_convex_hull(contour, img_shape):
 
     return hull, area
 
-def line_inside_mask(p1, p2, label_mask, label):
-    temp = np.zeros_like(label_mask, dtype=np.uint8)
-    cv.line(temp, tuple(p1), tuple(p2), 255, 1) 
-    line_pixels = (temp == 255)
-    return np.all(label_mask[line_pixels] == label)
+def line_inside_component(p1, p2, label_mask, label):
+    line_img = np.zeros_like(label_mask, dtype=np.uint8)
+    draw_line(line_img, p1, p2, 255)
+    return np.all(label_mask[line_img == 255] == label)
 
-def find_minor_axis(mask, major_axis, label, step=1):
-    height, width = mask.shape
+def find_minor_axis(label_mask, major_axis, label, step=1):
+    height, width = label_mask.shape
 
     # Vetor de suporte sobre o eixo maior
     p1, p2 = major_axis
@@ -100,11 +105,11 @@ def find_minor_axis(mask, major_axis, label, step=1):
         pts = np.clip(pts, [0, 0], [width - 1, height - 1]).astype(np.uint32)
 
         # Imagem com 1 nas posicoes da reta candidata
-        line_mask = np.zeros_like(mask, dtype=np.uint8)
-        add_line(line_mask, pts[0], pts[1], color=1)
+        line_mask = np.zeros_like(label_mask, dtype=np.uint8)
+        draw_line(line_mask, pts[0], pts[1], color=1)
 
         # Apenas os pontos da reta dentro do objeto
-        pts_inside = np.nonzero(line_mask & (mask == label))
+        pts_inside = np.nonzero(line_mask & (label_mask == label))
         if len(pts_inside[0]) < 2:
             continue # Em pontos de borda, pode ocorrer de nao ter overlap 
 
@@ -122,10 +127,24 @@ def find_minor_axis(mask, major_axis, label, step=1):
             minor = (m1, m2)
     return minor, max_dist
 
-def calculate_eccentricity(contour, label_mask, label):
+def calculate_axis_eccentricity(contour, label_mask, label):
     major, major_axis_len = find_major_axis(contour, label_mask, label)
     minor, minor_axis_len = find_minor_axis(label_mask, major, label)
-    return major, minor, major_axis_len / minor_axis_len
+    return major, minor, np.sqrt(1 - minor_axis_len**2 / major_axis_len**2)
+
+def calculate_ellipse_eccentricity(contour):
+    """
+    Teste 
+    """
+    if len(contour) < 5:
+        return None, np.nan # minimo de 5 pontos
+
+    # Fita a elipse e obtem os eixos menor e maior
+    ellipse = cv.fitEllipse(contour)
+    (major_axis, minor_axis) = ellipse[1]
+    a, b = max(major_axis, minor_axis), min(major_axis, minor_axis)
+    eccentricity = np.sqrt(1 - (b ** 2) / (a ** 2)) if a != 0 else np.inf
+    return ellipse, eccentricity
 
 def find_major_axis(contour, label_mask, label):
     # Inicializacao das variavies
@@ -133,8 +152,7 @@ def find_major_axis(contour, label_mask, label):
     max_dist = 0
 
     # Verifica todos os pares de pontos do contorno
-    # Se a reta entre eles for maior que a maior ja vista,
-    # e estiver dentro do objeto, atualiza o eixo maior
+    # para achar o eixo maior (maior segmento interno)
     for i in range(len(contour) - 1):
         p1 = contour[i][0]
 
@@ -148,7 +166,7 @@ def find_major_axis(contour, label_mask, label):
         sorted_indices = np.argsort(-dists)
         for idx in sorted_indices:
             p2, dist = contour_pts[idx], dists[idx]
-            if line_inside_mask(p1, p2, label_mask, label):
+            if line_inside_component(p1, p2, label_mask, label):
                 max_dist = dist
                 major = (p1, p2)
                 break
@@ -158,108 +176,129 @@ def find_major_axis(contour, label_mask, label):
 def calculate_perimeter(contour):
     return cv.arcLength(contour, closed=True)
 
-def add_line(img, p1, p2, color):
+def draw_line(img, p1, p2, color):
     cv.line(img, tuple(p1), tuple(p2), color, thickness=1)
 
-def add_label_and_color(label_img, labels, label, color):
-    # Color the region
+def draw_label_with_color(label_img, labels, label, color):
+    # Adiciona cor
     label_img[labels == label] = color
 
-    # Find coordinates of the label
+    # Adiciona texto no centro de massa do objeto
     y_coords, x_coords = np.where(labels == label)
-
-    # Center of mass
     x_center = int(np.mean(x_coords))
     y_center = int(np.mean(y_coords))
-
-    # Text parameters
-    text = str(label - 2)
+    text = str(label)
     font = cv.FONT_HERSHEY_PLAIN
     font_scale = 1
     thickness = 1
-
-    # Measure text size
-    (text_width, text_height), baseline = cv.getTextSize(text, font, font_scale, thickness)
-
-    # Top-left corner of text so that it's centered
+    (text_width, text_height), _ = cv.getTextSize(text, font, font_scale, thickness)
     x_text = x_center - text_width // 2
     y_text = y_center + text_height // 2
-
-    # Create a mask with the text
-    text_mask = np.zeros(labels.shape, dtype=np.uint8)
-    cv.putText(text_mask, text, (x_text, y_text), font, font_scale, 255, thickness, cv.LINE_8)
-
-    # Check if the text is fully inside the object
-    text_inside = np.all((text_mask == 0) | (labels == label))
-
-    #if text_inside:
-        # Draw text on image
     cv.putText(label_img, text, (x_text, y_text), font, font_scale, (0, 0, 0), thickness, cv.LINE_8)
-    #else:
-        #x_text, y_text = np.max(x_coords), np.min(y_coords)
-        #while labels[y_text][x_text] != label:
-        #    y_text += 1
-        #    x_text -= 1
-        #cv.putText(label_img, text, (x_text, y_text), font, 0.6, (0, 0, 0), thickness, cv.LINE_8)
 
-def add_contour(img, contour, color):
+def draw_contour(img, contour, color):
     cv.drawContours(img, [contour], -1, color, 1)
 
-label_colors = [(200, 200, 0), (0, 200, 200), (200, 0, 200), (200, 255, 0),]
-label_img = np.full(rgb_img.shape, (255, 255, 255), dtype=np.uint8)
-hull_img = rgb_img.copy()
+def show_images(img_dict, screen_w, screen_h):
+    h, w = img_dict[list(img_dict.keys())[0]].shape[:2]
+    n = len(img_dict)
+    cols = screen_w // w
+    rows = int(np.ceil(n / cols))
+    offset_x = (screen_w % w) // (cols - 1) if cols > 1 else 0
+    offset_y = (screen_h % h) // (rows - 1) if rows > 1 else 0
+    max_y = screen_h - h - offset_y
+    print(f"Screen size: {screen_w}x{screen_h}, Image size: {w}x{h}, Offset: {offset_x}x{offset_y}, Rows: {rows}, Cols: {cols}")
+    for i, (title, img) in enumerate(img_dict.items()):
+        cv.imshow(title, img)
+        x = (i % cols) * (w + offset_x)
+        y = (i // cols) * (h + offset_y)
+        if y > max_y:
+            y = max_y
+        print(x, y)
+        cv.moveWindow(title, x, y)
+    cv.waitKey(0)
 
-info = {}
+def main():
+    mask = build_mask(rgb_img)
+    bin_img = mask * 255
 
-for i in range(2, num_labels):
-    # Contorno e fecho convexo do objeto
-    contour = find_contour(labels, i)
-    hull, hull_area = find_convex_hull(contour, rgb_img.shape[:2])
-    # Calcula as propriedades
-    area = np.sum(np.where(labels == i, 1, 0))
-    major, minor, eccentricity = calculate_eccentricity(contour, labels, i)
-    info[i] = {
-        "area": area,
-        "perimetro": f"{calculate_perimeter(contour):.6f}",
-        "excentricidade": f"{eccentricity:.6f}",
-        "solidez": f"{area / hull_area:.6f}"
+    bin_border = borders(mask)
+    border_img = bin_border * 255
+
+    # Encontra componentes
+    num_labels, labels = cv.connectedComponents(1 - mask, connectivity=8)
+    labels -= 1 # Ajusta labels para comecar de 0
+    
+    label_colors = [(198, 196, 152), (198, 139, 153), (170, 198, 153), (241, 220, 98),]
+    label_img = np.full(rgb_img.shape, (255, 255, 255), dtype=np.uint8)
+    hull_img = rgb_img.copy()
+
+    info = {}
+
+    for i in range(num_labels - 1):
+        # Contorno e fecho convexo do objeto
+        contour = find_contour(labels, i)
+        hull, hull_area = find_convex_hull(contour, rgb_img.shape[:2])
+
+        # Calcula as propriedades
+        area = np.sum(np.where(labels == i, 1, 0))
+        major, minor, e1 = calculate_axis_eccentricity(contour, labels, i)
+        ellipse, e2 = calculate_ellipse_eccentricity(contour)
+        info[i] = {
+            "area": area,
+            "perimetro": f"{calculate_perimeter(contour):.6f}",
+            "excentricidade": f"{e1:.6f} || {e2:<8.6f}",
+            "solidez": f"{area / hull_area:.6f}",
+        }
+
+        # Desenha as informacoes nas imagens
+        draw_label_with_color(label_img, labels, i, label_colors[i % len(label_colors)])
+        draw_line(rgb_img, major[0], major[1], (0, 0, 0))
+        draw_line(rgb_img, minor[0], minor[1], (0, 0, 0))
+        draw_contour(hull_img, hull, (0, 0, 0))
+        if ellipse:
+            cv.ellipse(rgb_img, ellipse, (0, 0, 0), 1)
+
+    # Imprime as informacoes de cada regiao
+    print(f"numero de regioes: {num_labels - 2}")
+    for label, metrics in info.items():
+        str_metrics = "\t".join([f"{m}: {v:<8}" for m, v in metrics.items()])
+        print(f"Regiao {label - 2}:\t{str_metrics}")
+
+    # Calcula o histograma de areas
+    areas = np.array([info[label]["area"] for label in info.keys()])
+    hist, hist_img = area_histogram(areas)
+    
+    # Imprime regioes por tamanho
+    str_bins = ["pequenas", "medias", "grandes"]
+    for bin in range(len(str_bins)):
+        print(f"numero de regioes {str_bins[bin]}:\t{hist[bin]}")
+
+    # Exibe as imagens
+    windows = {
+        "Eixos principais e elipse": rgb_img,
+        "Histograma": hist_img,
+        "Binaria": bin_img,
+        "Bordas": border_img,
+        "Labels": label_img,
+        "Fecho convexo": hull_img,
     }
-    # Desenha as informacoes nas imagens
-    add_label_and_color(label_img, labels, i, label_colors[i % len(label_colors)])
-    add_line(rgb_img, major[0], major[1], (0, 0, 0))
-    add_line(rgb_img, minor[0], minor[1], (0, 0, 0))
-    add_contour(rgb_img, contour, (0, 0, 0))
-    add_contour(hull_img, hull, (0, 0, 255))
+    show_images(windows, 1440, 1080)
+    return
+    w, h = rgb_img.shape[1], rgb_img.shape[0]
+    screen_w, screen_h = 1440, 1080
+    offset_x, offset_y = 50, 50
+    columns = screen_w // (w + offset_x) - 1
+    for i, (title, image) in enumerate(windows.items()):
+        cv.imshow(title, image)
+        x = (i % columns) * (w + offset_x)
+        if i < columns:
+            y = 0
+        else:
+            y = ((i // columns) % (screen_h - (h + offset_y))) * (h + offset_y)
+        cv.moveWindow(title, x, y)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
 
-print(f"numero de regioes: {num_labels - 2}")
-for label, metrics in info.items():
-    str_metrics = "\t".join([f"{m}: {v}" for m, v in metrics.items()])
-    print(f"Regiao {label - 2}:\t{str_metrics}")
-
-areas = np.array([info[label]["area"] for label in info.keys()])
-bin_edges = [1500, 3000]  # → 0: <1500, 1: 1500–2999, 2: ≥3000
-bins = np.digitize(areas, bin_edges)
-bin_counts = [np.sum(bins == i) for i in range(len(bin_edges) + 1)]
-str_bins = ["pequenas", "medias", "grandes"]
-for bin in range(len(bin_counts)):
-    print(f"numero de regioes {str_bins[bin]}:\t{bin_counts[bin]}")
-
-windows = {
-    "Eixos principais": rgb_img,
-    "Binaria": bin_img,
-    "Bordas": border_img,
-    "Labels": label_img,
-    "Fecho convexo": hull_img,
-    "Histograma": calc_histogram(areas),
-}
-w, h = rgb_img.shape[1], rgb_img.shape[0]
-screen_w, screen_h = 1440, 1080
-offset_x, offset_y = 50, 50
-columns = screen_w // (w + offset_x) - 1
-for i, (title, image) in enumerate(windows.items()):
-    cv.imshow(title, image)
-    x = (i % columns) * (w + offset_x)
-    y = (i // columns) * (h + offset_y)
-    cv.moveWindow(title, x, y)
-cv.waitKey(0)
-cv.destroyAllWindows()
+if __name__ == "__main__":
+    main()

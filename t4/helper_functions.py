@@ -30,9 +30,7 @@ def save_images(image_dict: dict[str, ndarray], exercise: int | str) -> None:
     """
     str_ex = str(exercise).zfill(2) # adiciona um zero a esquerda se ex < 10
 
-    if not os.path.exists(os.path.join(RESULT_FOLDER, str_ex)):
-        os.makedirs(os.path.join(RESULT_FOLDER, str_ex))
-    
+    os.makedirs(os.path.join(RESULT_FOLDER, str_ex), exist_ok=True)
     ex_folder = os.path.join(RESULT_FOLDER, str_ex)
 
     params = [cv.IMWRITE_PNG_STRATEGY, cv.IMWRITE_PNG_STRATEGY_DEFAULT]
