@@ -36,14 +36,14 @@ def handle_results(
 def run(args):
     rgb_img = cv.imread(get_image_path(args.image), cv.IMREAD_COLOR)
 
-    # Imagem binaria
+    # Mascara binaria onde os objetos tem valor 1 e o fundo 0
     mask = build_mask(rgb_img)
-    bin_img = mask * 255
+    bin_img = (1 - mask) * 255
     # Bordas
     bin_border = find_borders(mask)
     border_img = bin_border * 255
     # Encontra componentes (fundo: label 0)
-    num_labels, labels = cv.connectedComponents(1 - mask, connectivity=8)
+    num_labels, labels = cv.connectedComponents(mask, connectivity=4)
     # Ajusta labels dos objetos para comecar de 0
     labels -= 1
     num_labels -= 1
@@ -91,10 +91,10 @@ def run(args):
     # Exibe as imagens
     results = {
         "binaria": bin_img,
-        "labels": label_img,
         "bordas": border_img,
-        "fechos convexos": hull_img,
-        "eixos principais e elipses": rgb_img,
+        "labels": label_img,
+        "fechos_convexos": hull_img,
+        "eixos_elipses": rgb_img,
         "histograma": hist_img,
     }
     handle_results(results, "01", args.save, args.display)

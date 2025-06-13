@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #rgb_img = cv.imread('images/ellipse.png')
-rgb_img = cv.imread('images/objetos3.png')
+#rgb_img = cv.imread('images/objetos3.png')
 
 def area_histogram(areas: np.ndarray) -> tuple[list[int], np.ndarray]:
     """
@@ -40,19 +40,21 @@ def area_histogram(areas: np.ndarray) -> tuple[list[int], np.ndarray]:
 
     return [int(val) for val in hist[0]], img
 
-def build_mask(img):
-    # Em mask, fundo tem valor 1 e objetos 0
-    # A imagem binaria bin_img tem fundo branco (255) e objetos pretos (0)
-    mask = np.all(rgb_img == 255, axis=2).astype(np.uint8)
-    return mask
+def build_mask(img: np.ndarray) -> np.ndarray:
+    """
+    Dada uma imagem RGB com fundo branco,
+    Retorna uma mascara binaria onde os objetos sao representados por 1 e o fundo por 0
+    """
+    return 1 - np.all(img == 255, axis=2).astype(np.uint8)
 
-def borders(mask):
-    # Calcula bordas (vizinhanca-4)
+def borders(bin_obj):
+    # Calculo das bordas usando convolucao
+    # Um ponto de borda tem menos de 4 vizinhos em vizinhanca-4
     neighbor_kernel = np.array([[0, 1, 0],
                                 [1, 0, 1],
                                 [0, 1, 0]], dtype=np.uint8)
-    neighbor_count = cv.filter2D(mask, -1, neighbor_kernel, borderType=cv.BORDER_REPLICATE)
-    bin_border = np.where((mask == 1) & (neighbor_count < 4), 0, 1).astype(np.uint8)
+    neighbor_count = cv.filter2D(bin_obj, -1, neighbor_kernel, borderType=cv.BORDER_REPLICATE)
+    bin_border = np.where((bin_obj == 1) & (neighbor_count < 4), 0, 1).astype(np.uint8)
     return bin_border
 
 def find_contour(label_mask, label):
@@ -219,6 +221,7 @@ def show_images(img_dict, screen_w, screen_h):
     cv.waitKey(0)
 
 def main():
+    rgb_img = cv.imread('images/objetos3.png')
     mask = build_mask(rgb_img)
     bin_img = mask * 255
 

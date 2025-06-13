@@ -41,9 +41,9 @@ def area_histogram(areas: np.ndarray) -> tuple[list[int], np.ndarray]:
 def build_mask(img: np.ndarray) -> np.ndarray:
     """
     Dada uma imagem RGB com fundo branco,
-    Retorna uma mascara binaria onde os objetos sao representados por 1
+    Retorna uma mascara binaria onde os objetos sao representados por 1 e o fundo por 0
     """
-    return np.all(img == 255, axis=2).astype(np.uint8)
+    return 1 - np.all(img == 255, axis=2).astype(np.uint8)
 
 def find_borders(bin_obj: np.ndarray) -> np.ndarray:
     """
