@@ -1,4 +1,8 @@
 from argparse import ArgumentParser
+import cv2 as cv
+import numpy as np
+import os
+
 from measurement_methods import *
 from helper_functions import (
     get_image_path, save_images, display_images,
@@ -17,7 +21,7 @@ def handle_args(args):
         raise ValueError("No action specified. Use -s to save images and/or -d to display them.")
 
 def handle_results(
-        results: dict[str, ndarray],
+        results: dict[str, np.ndarray],
         exercise: str,
         save: bool,
         display: bool
