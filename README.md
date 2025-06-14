@@ -1,0 +1,1 @@
+Soluções desenvolvidas durante a disciplina Introdução ao Processamento Digital de Imagens (MC920 / MO443), no 1° Semestre de 2025.
